@@ -1,0 +1,3 @@
+#!/usr/bin/env node
+
+import("./dist/index.js").then((m) => m.main?.()).catch(console.error);
