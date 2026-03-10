@@ -16,5 +16,12 @@ export default defineConfig({
       },
     },
     testTimeout: 30000,
+    server: {
+      deps: {
+        // ws must NOT be inlined — it uses node:http upgrade events
+        // that break when Vite transforms the module.
+        external: ["ws"],
+      },
+    },
   },
 });

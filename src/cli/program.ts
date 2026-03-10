@@ -49,5 +49,34 @@ export function createProgram(): Command {
       await configCommand(opts);
     });
 
+  // Gateway subcommand with start/stop/status
+  const gateway = program
+    .command("gateway")
+    .description("Manage the OpenClippy gateway daemon");
+
+  gateway
+    .command("start")
+    .description("Start the gateway daemon")
+    .action(async () => {
+      const { gatewayStartCommand } = await import("./gateway.js");
+      await gatewayStartCommand();
+    });
+
+  gateway
+    .command("stop")
+    .description("Stop the running gateway daemon")
+    .action(async () => {
+      const { gatewayStopCommand } = await import("./gateway.js");
+      await gatewayStopCommand();
+    });
+
+  gateway
+    .command("status")
+    .description("Check gateway daemon status")
+    .action(async () => {
+      const { gatewayStatusCommand } = await import("./gateway.js");
+      await gatewayStatusCommand();
+    });
+
   return program;
 }

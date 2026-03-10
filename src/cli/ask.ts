@@ -11,11 +11,15 @@ import { runAgent } from "../agents/runtime.js";
 import type { ServiceId } from "../config/types.services.js";
 import type { ToolProfileId } from "../config/types.tools.js";
 
-// Service module imports
+// Service module imports — Phase 1
 import { mailModule } from "../services/mail/module.js";
 import { calendarModule } from "../services/calendar/module.js";
 import { todoModule } from "../services/todo/module.js";
 import { teamsChatModule } from "../services/teams-chat/module.js";
+// Service module imports — Phase 2
+import { onedriveModule } from "../services/onedrive/module.js";
+import { peopleModule } from "../services/people/module.js";
+import { presenceModule } from "../services/presence/module.js";
 
 /** Get the list of enabled service IDs from config */
 function getEnabledServiceIds(config: { services?: Record<string, { enabled?: boolean }> }): ServiceId[] {
@@ -52,10 +56,15 @@ export async function askCommand(message: string): Promise<void> {
 
     // 3. Build service registry, collect tools based on profile
     const registry = new ServiceRegistry();
+    // Phase 1 services
     registry.register(mailModule);
     registry.register(calendarModule);
     registry.register(todoModule);
     registry.register(teamsChatModule);
+    // Phase 2 services
+    registry.register(onedriveModule);
+    registry.register(peopleModule);
+    registry.register(presenceModule);
 
     const servicesConfig = config.services ?? {};
     const profile = (config.tools?.profile ?? "standard") as ToolProfileId;

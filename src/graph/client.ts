@@ -64,7 +64,11 @@ export async function graphRequest<T>(params: GraphRequestParams): Promise<T> {
         Accept: "application/json",
         ...params.headers,
       },
-      body: params.body ? JSON.stringify(params.body) : undefined,
+      body: params.body
+        ? (params.headers?.["Content-Type"] && params.headers["Content-Type"] !== "application/json"
+          ? String(params.body)
+          : JSON.stringify(params.body))
+        : undefined,
       signal: controller.signal,
     });
 

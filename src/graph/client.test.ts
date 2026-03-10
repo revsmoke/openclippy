@@ -54,6 +54,44 @@ describe("graphRequest", () => {
     expect(result).toBeUndefined();
   });
 
+  it("passes raw body when Content-Type is not JSON", async () => {
+    globalThis.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: () => Promise.resolve({ id: "file-1", name: "test.txt" }),
+    });
+
+    await graphRequest({
+      token: "t",
+      path: "/me/drive/root:/test.txt:/content",
+      method: "PUT",
+      body: "Hello, world!",
+      headers: { "Content-Type": "application/octet-stream" },
+    });
+
+    const callArgs = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0];
+    // Body should be the raw string, not JSON-stringified (which would add quotes)
+    expect(callArgs[1].body).toBe("Hello, world!");
+  });
+
+  it("JSON-stringifies body when Content-Type is JSON", async () => {
+    globalThis.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: () => Promise.resolve({ id: "msg-1" }),
+    });
+
+    await graphRequest({
+      token: "t",
+      path: "/me/messages",
+      method: "POST",
+      body: { subject: "Test" },
+    });
+
+    const callArgs = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0];
+    expect(callArgs[1].body).toBe('{"subject":"Test"}');
+  });
+
   it("uses beta endpoint when specified", async () => {
     globalThis.fetch = vi.fn().mockResolvedValue({
       ok: true,
