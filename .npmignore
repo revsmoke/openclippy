@@ -1,0 +1,13 @@
+src/
+tests/
+*.test.ts
+.git
+.gitignore
+.env*
+coverage/
+Dockerfile
+.dockerignore
+agent_plans/
+context_history/
+*.psd
+*.png

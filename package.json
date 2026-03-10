@@ -10,6 +10,30 @@
   "bin": {
     "openclippy": "./openclippy.mjs"
   },
+  "files": [
+    "dist",
+    "openclippy.mjs"
+  ],
+  "keywords": [
+    "microsoft-365",
+    "graph-api",
+    "ai-agent",
+    "outlook",
+    "teams",
+    "onedrive",
+    "calendar",
+    "todo",
+    "claude",
+    "autonomous-agent"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/twoedge/openclippy.git"
+  },
+  "homepage": "https://github.com/twoedge/openclippy#readme",
+  "bugs": {
+    "url": "https://github.com/twoedge/openclippy/issues"
+  },
   "main": "dist/index.js",
   "exports": {
     ".": "./dist/index.js"

@@ -738,17 +738,17 @@ teams-bot:
   - Azure AD app registration guide
   - Service selection + consent
 
-- [ ] **4.3 Error recovery**
-  - Graceful degradation per service
-  - Token expiry recovery
-  - Network failure handling
+- [x] **4.3 Error recovery**
+  - [x] rate-limit.ts — graphRequestWithRetry with 429/503/504 handling, exponential backoff + jitter (11 tests)
+  - [x] health.ts — probeServiceHealth/probeAllServices for Graph endpoint health checks (5 tests)
+  - [x] graceful-degrade.ts — withGracefulDegradation wrapper for helpful fallback messages (7 tests)
 
-- [ ] **4.4 Deployment**
-  - npm publish config
-  - Docker support
-  - `npx openclippy` one-liner
+- [x] **4.4 Deployment**
+  - [x] package.json — npm publish fields (files, keywords, repository, homepage, bugs)
+  - [x] Dockerfile — node:22-slim, non-root user, config volume
+  - [x] .dockerignore, .npmignore
 
-- [ ] **4.5 Documentation**
+- [x] **4.5 Documentation**
   - README with quickstart
   - Azure AD setup guide
   - Service reference

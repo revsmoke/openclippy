@@ -1,0 +1,10 @@
+node_modules
+src
+tests
+*.test.ts
+.git
+.gitignore
+*.md
+!README.md
+.env*
+coverage
