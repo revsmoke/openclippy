@@ -28,11 +28,11 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/twoedge/openclippy.git"
+    "url": "git+https://github.com/revsmoke/openclippy.git"
   },
-  "homepage": "https://github.com/twoedge/openclippy#readme",
+  "homepage": "https://github.com/revsmoke/openclippy#readme",
   "bugs": {
-    "url": "https://github.com/twoedge/openclippy/issues"
+    "url": "https://github.com/revsmoke/openclippy/issues"
   },
   "main": "dist/index.js",
   "exports": {

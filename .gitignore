@@ -4,3 +4,7 @@ dist/
 *.log
 .DS_Store
 coverage/
+*.psd
+PLAN.md
+CURRENT_PLAN.md
+agent_plans/

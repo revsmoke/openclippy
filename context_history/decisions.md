@@ -1,0 +1,14 @@
+# Decisions Log — OpenClippy
+
+| Date | Decision | Reasoning | Alternatives Considered |
+|------|----------|-----------|------------------------|
+| 2026-03-10 | Treat Teams tools being filtered out in read-only profile as documented behavior, not a bug | The `filterToolsByProfile` uses suffix-based pattern matching consistently; Teams tools use non-standard suffixes (`_chats`, `_chat`, `_channels`, `_messages`) that don't match allowed patterns (`_list`, `_read`, etc.) | Fix naming convention to match (breaking change), add Teams-specific patterns to read-only rules (ad-hoc) |
+| 2026-03-10 | Use real service modules in service-registration tests, mock only external APIs in agent-flow tests | Service-registration tests verify wiring correctness; agent-flow tests need controlled API responses | Mock everything (loses integration value), use real APIs (flaky, slow, requires credentials) |
+| 2026-03-10 | Fix WS test race condition by registering message listener before connection opens | Server sends "connected" immediately; sequential connect→listen misses the message between steps | Delay server message (fragile), use event buffering (over-engineered) |
+| 2026-03-10 | Isolate WS tests with per-test gateway instances, share gateway for HTTP tests | WS tests need clean session state; HTTP tests are stateless and benefit from shared setup | Single shared gateway for all (cross-test interference), per-test for all (slow HTTP tests) |
+| 2026-03-10 | Defer Teams Bot (Task 2.3) to avoid botbuilder SDK dependency bloat | botbuilder adds significant dependency tree; other Phase 2 tasks deliver more value first | Install botbuilder now (large dep), skip Teams entirely (loses key feature) |
+| 2026-03-10 | Use PID file for gateway daemon management instead of process signaling | Simple, portable, works across CLI invocations; standard Unix daemon pattern | D-Bus/IPC (overkill), lock file (less info), systemd socket (not portable) |
+| 2026-03-10 | OneNote read bypasses graphRequest, uses direct fetch | Graph returns HTML for page content, not JSON; graphRequest parses JSON | Custom Content-Type header on graphRequest (awkward), separate HTML client (over-engineered) |
+| 2026-03-10 | Planner update requires If-Match etag for optimistic concurrency | Graph API enforces this for Planner resources; prevents conflicting concurrent edits | Skip etag (API would reject), lock-based approach (not supported by Graph) |
+| 2026-03-10 | Graceful degradation catches 401/403/429/network but passes through 404 | 404 is a valid application error (resource not found), not a service degradation | Catch all errors (masks real bugs), catch nothing (poor UX on transient failures) |
+| 2026-03-10 | Memory store uses SQLite WAL journal mode | Allows concurrent reads during writes, better performance for agent use case | Default journal mode (blocks reads during writes), in-memory only (no persistence) |
