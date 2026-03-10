@@ -706,14 +706,23 @@ teams-bot:
   - Vector search (sqlite-vec + embeddings)
   - Context window management
 
-- [ ] **3.3 Planner service** (`src/services/planner/`)
-  - Tools: planner_plans, planner_tasks, planner_create, planner_update
+- [x] **3.3 Planner service** (`src/services/planner/`)
+  - [x] types.ts — PlannerPlan, PlannerTask, PlannerBucket, PlannerAssignment
+  - [x] tools.ts — planner_plans (GET /me/planner/plans), planner_tasks (GET /planner/plans/{planId}/tasks), planner_read (GET /planner/tasks/{taskId}), planner_create (POST /planner/plans/{planId}/tasks), planner_update (PATCH /planner/tasks/{taskId} with If-Match etag), planner_buckets (GET /planner/plans/{planId}/buckets)
+  - [x] module.ts — ServiceModule with scopes Tasks.Read / Tasks.ReadWrite
+  - [x] tools.test.ts — TDD tests for each tool with mocked Graph responses
 
-- [ ] **3.4 OneNote service** (`src/services/onenote/`)
-  - Tools: onenote_notebooks, onenote_pages, onenote_create, onenote_update
+- [x] **3.4 OneNote service** (`src/services/onenote/`)
+  - [x] types.ts — OnenoteNotebook, OnenoteSection, OnenotePage
+  - [x] tools.ts — onenote_notebooks (GET /me/onenote/notebooks), onenote_sections (GET /me/onenote/notebooks/{id}/sections), onenote_pages (GET /me/onenote/sections/{id}/pages), onenote_read (GET /me/onenote/pages/{id}/content), onenote_create (POST /me/onenote/sections/{id}/pages with HTML)
+  - [x] module.ts — ServiceModule with scopes Notes.Read / Notes.ReadWrite
+  - [x] tools.test.ts — TDD tests for each tool with mocked Graph responses
 
-- [ ] **3.5 SharePoint service** (`src/services/sharepoint/`)
-  - Tools: sharepoint_sites, sharepoint_lists, sharepoint_files
+- [x] **3.5 SharePoint service** (`src/services/sharepoint/`)
+  - [x] types.ts — SharePointSite, SharePointList, SharePointListItem, SharePointDriveItem
+  - [x] tools.ts — sharepoint_sites (GET /sites?search=), sharepoint_site (GET /sites/{id}), sharepoint_lists (GET /sites/{id}/lists), sharepoint_list_items (GET /sites/{id}/lists/{id}/items), sharepoint_files (GET /sites/{id}/drive/root/children), sharepoint_search (GET /sites/{id}/drive/root/search)
+  - [x] module.ts — ServiceModule with scopes Sites.Read.All / Sites.ReadWrite.All
+  - [x] tools.test.ts — TDD tests for each tool with mocked Graph responses
 
 ### Phase 4: Polish + Plugin System + Deployment
 **Goal:** Production-ready, extensible, deployable.

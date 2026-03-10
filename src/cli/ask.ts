@@ -20,6 +20,10 @@ import { teamsChatModule } from "../services/teams-chat/module.js";
 import { onedriveModule } from "../services/onedrive/module.js";
 import { peopleModule } from "../services/people/module.js";
 import { presenceModule } from "../services/presence/module.js";
+// Service module imports — Phase 3
+import { plannerModule } from "../services/planner/module.js";
+import { onenoteModule } from "../services/onenote/module.js";
+import { sharepointModule } from "../services/sharepoint/module.js";
 
 /** Get the list of enabled service IDs from config */
 function getEnabledServiceIds(config: { services?: Record<string, { enabled?: boolean }> }): ServiceId[] {
@@ -65,6 +69,10 @@ export async function askCommand(message: string): Promise<void> {
     registry.register(onedriveModule);
     registry.register(peopleModule);
     registry.register(presenceModule);
+    // Phase 3 services
+    registry.register(plannerModule);
+    registry.register(onenoteModule);
+    registry.register(sharepointModule);
 
     const servicesConfig = config.services ?? {};
     const profile = (config.tools?.profile ?? "standard") as ToolProfileId;
