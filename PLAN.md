@@ -694,17 +694,18 @@ teams-bot:
 ### Phase 3: TUI + Memory + Planner + OneNote + SharePoint
 **Goal:** Rich interactive experience and full M365 coverage.
 
-- [ ] **3.1 TUI** (`src/tui/`)
-  - Interactive chat interface
-  - Status bar (services, token, unread counts)
-  - Slash commands (/services, /status, /model, /reset)
-  - Streaming agent responses
+- [x] **3.1 TUI** (`src/tui/`)
+  - [x] tui.ts — Readline-based REPL with slash commands (/help, /reset, /status, /services, /model, /quit)
+  - [x] tui.test.ts — 14 tests for parseSlashCommand, formatResponse, SLASH_COMMANDS
+  - [x] cli/chat.ts — Thin wrapper calling startTui()
+  - [x] cli/chat.test.ts — 1 test verifying delegation
+  - [x] cli/program.ts — Added `chat` command
 
-- [ ] **3.2 Memory system** (`src/memory/`)
-  - SQLite store (better-sqlite3)
-  - Conversation history persistence
-  - Vector search (sqlite-vec + embeddings)
-  - Context window management
+- [x] **3.2 Memory system** (`src/memory/`)
+  - [x] store.ts — SQLite-backed MemoryStore (WAL, sessions + messages tables, search, stats)
+  - [x] store.test.ts — 19 tests with real SQLite in temp dirs
+  - [x] search.ts — buildMemoryContext() + formatMemoryContext()
+  - [x] search.test.ts — 9 tests with mock MemoryStore
 
 - [x] **3.3 Planner service** (`src/services/planner/`)
   - [x] types.ts — PlannerPlan, PlannerTask, PlannerBucket, PlannerAssignment

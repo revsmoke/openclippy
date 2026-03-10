@@ -41,6 +41,14 @@ export function createProgram(): Command {
     });
 
   program
+    .command("chat")
+    .description("Start an interactive chat session with Clippy")
+    .action(async () => {
+      const { chatCommand } = await import("./chat.js");
+      await chatCommand();
+    });
+
+  program
     .command("config")
     .description("Show or edit configuration")
     .option("--show", "Show current configuration")
