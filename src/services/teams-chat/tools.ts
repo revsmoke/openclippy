@@ -1,6 +1,7 @@
 import { graphRequest, type GraphCollectionResponse } from "../../graph/client.js";
 import { buildODataQuery } from "../../graph/types.js";
 import type { AgentTool, ToolContext, ToolResult } from "../types.js";
+import { errorResult } from "../tool-utils.js";
 import type { TeamsChat, TeamsChatMessage, TeamsChannel } from "./types.js";
 
 // ---------------------------------------------------------------------------
@@ -36,10 +37,6 @@ function chatLabel(chat: TeamsChat): string {
   if (chat.chatType === "oneOnOne") return "1:1 chat";
   if (chat.chatType === "meeting") return "Meeting chat";
   return "Group chat";
-}
-
-function errorResult(message: string): ToolResult {
-  return { content: message, isError: true };
 }
 
 // ---------------------------------------------------------------------------

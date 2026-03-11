@@ -1,5 +1,6 @@
 import { graphRequest, graphPaginate } from "../../graph/client.js";
 import type { AgentTool, ToolContext, ToolResult } from "../types.js";
+import { requireString, requireArray } from "../tool-utils.js";
 import type {
   GraphEvent,
   GraphGetScheduleResponse,
@@ -122,30 +123,6 @@ function formatSchedule(info: GraphScheduleInformation): string {
   }
 
   return lines.join("\n");
-}
-
-/** Validate that a required string param is present. */
-function requireString(
-  input: Record<string, unknown>,
-  key: string,
-): string | ToolResult {
-  const val = input[key];
-  if (typeof val !== "string" || val.trim() === "") {
-    return { content: `Missing required parameter: ${key}`, isError: true };
-  }
-  return val.trim();
-}
-
-/** Validate that a required array param is present. */
-function requireArray(
-  input: Record<string, unknown>,
-  key: string,
-): unknown[] | ToolResult {
-  const val = input[key];
-  if (!Array.isArray(val) || val.length === 0) {
-    return { content: `Missing required parameter: ${key}`, isError: true };
-  }
-  return val;
 }
 
 // ---------------------------------------------------------------------------

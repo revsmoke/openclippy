@@ -1,6 +1,7 @@
 import { graphRequest } from "../../graph/client.js";
 import type { GraphCollectionResponse } from "../../graph/client.js";
 import type { AgentTool, ToolContext, ToolResult } from "../types.js";
+import { missingParam, formatShortDate, formatFileSize } from "../tool-utils.js";
 import type { DriveItem, Permission } from "./types.js";
 
 // ---------------------------------------------------------------------------
@@ -14,19 +15,6 @@ function isTextMime(mimeType: string): boolean {
   return TEXT_MIME_PREFIXES.some((prefix) => mimeType.startsWith(prefix));
 }
 
-function formatSize(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-  return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`;
-}
-
-function formatDate(iso?: string): string {
-  if (!iso) return "unknown";
-  const d = new Date(iso);
-  return d.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
-}
-
 function itemTypeLabel(item: DriveItem): string {
   if (item.folder) return "folder";
   return item.file?.mimeType ?? "file";
@@ -34,13 +22,9 @@ function itemTypeLabel(item: DriveItem): string {
 
 function formatItem(item: DriveItem): string {
   const icon = item.folder ? "📁" : "📄";
-  const sizeStr = item.folder ? `${item.folder.childCount} items` : formatSize(item.size);
-  const modified = formatDate(item.lastModifiedDateTime);
+  const sizeStr = item.folder ? `${item.folder.childCount} items` : formatFileSize(item.size);
+  const modified = formatShortDate(item.lastModifiedDateTime);
   return `${icon} ${item.name} — ${sizeStr}, modified ${modified} — id: ${item.id}`;
-}
-
-function missingParam(name: string): ToolResult {
-  return { content: `Missing required parameter: ${name}`, isError: true };
 }
 
 // ---------------------------------------------------------------------------
@@ -128,9 +112,9 @@ export function filesReadTool(): AgentTool {
       const lines: string[] = [];
       lines.push(`Name: ${item.name}`);
       lines.push(`Type: ${itemTypeLabel(item)}`);
-      lines.push(`Size: ${formatSize(item.size)}`);
-      lines.push(`Modified: ${formatDate(item.lastModifiedDateTime)}`);
-      lines.push(`Created: ${formatDate(item.createdDateTime)}`);
+      lines.push(`Size: ${formatFileSize(item.size)}`);
+      lines.push(`Modified: ${formatShortDate(item.lastModifiedDateTime)}`);
+      lines.push(`Created: ${formatShortDate(item.createdDateTime)}`);
       if (item.webUrl) lines.push(`Web URL: ${item.webUrl}`);
       if (item.parentReference?.path) lines.push(`Path: ${item.parentReference.path}/${item.name}`);
       lines.push(`ID: ${item.id}`);
@@ -247,7 +231,7 @@ export function filesUploadTool(): AgentTool {
       });
 
       return {
-        content: `File uploaded: "${item.name}" (${formatSize(item.size)}) — id: ${item.id}`,
+        content: `File uploaded: "${item.name}" (${formatFileSize(item.size)}) — id: ${item.id}`,
       };
     },
   };

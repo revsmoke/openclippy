@@ -1,6 +1,7 @@
 import { graphRequest } from "../../graph/client.js";
 import type { GraphCollectionResponse } from "../../graph/client.js";
 import type { AgentTool, ToolContext, ToolResult } from "../types.js";
+import { missingParam, formatDateOnly } from "../tool-utils.js";
 import type {
   PlannerPlan,
   PlannerTask,
@@ -12,10 +13,6 @@ import type {
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
-
-function missingParam(name: string): ToolResult {
-  return { content: `Missing required parameter: ${name}`, isError: true };
-}
 
 /** Map Planner priority integer to human-readable label */
 function priorityLabel(priority: number): string {
@@ -35,12 +32,6 @@ function statusLabel(percentComplete: number): string {
   return "In progress";
 }
 
-/** Format a date string to YYYY-MM-DD */
-function formatDate(dt?: string): string | undefined {
-  if (!dt) return undefined;
-  return dt.split("T")[0];
-}
-
 function formatPlan(plan: PlannerPlan): string {
   const parts: string[] = [`- ${plan.title}`];
 
@@ -49,7 +40,7 @@ function formatPlan(plan: PlannerPlan): string {
   else if (plan.owner) parts.push(`  Owner: ${plan.owner}`);
 
   if (plan.container) parts.push(`  Container: ${plan.container.type} (${plan.container.containerId})`);
-  if (plan.createdDateTime) parts.push(`  Created: ${formatDate(plan.createdDateTime)}`);
+  if (plan.createdDateTime) parts.push(`  Created: ${formatDateOnly(plan.createdDateTime)}`);
 
   parts.push(`  id: ${plan.id}`);
   return parts.join("\n");
@@ -58,7 +49,7 @@ function formatPlan(plan: PlannerPlan): string {
 function formatTaskSummary(task: PlannerTask): string {
   const status = statusLabel(task.percentComplete);
   const priority = priorityLabel(task.priority);
-  const due = task.dueDateTime ? ` (due: ${formatDate(task.dueDateTime)})` : "";
+  const due = task.dueDateTime ? ` (due: ${formatDateOnly(task.dueDateTime)})` : "";
 
   const parts: string[] = [`- ${task.title}`];
   parts.push(`  Status: ${status} | Priority: ${priority}${due}`);
@@ -75,9 +66,9 @@ function formatTaskDetail(task: PlannerTaskWithDetails): string {
   parts.push(`Status: ${statusLabel(task.percentComplete)} (${task.percentComplete}%)`);
   parts.push(`Priority: ${priorityLabel(task.priority)}`);
 
-  if (task.startDateTime) parts.push(`Start: ${formatDate(task.startDateTime)}`);
-  if (task.dueDateTime) parts.push(`Due: ${formatDate(task.dueDateTime)}`);
-  if (task.completedDateTime) parts.push(`Completed: ${formatDate(task.completedDateTime)}`);
+  if (task.startDateTime) parts.push(`Start: ${formatDateOnly(task.startDateTime)}`);
+  if (task.dueDateTime) parts.push(`Due: ${formatDateOnly(task.dueDateTime)}`);
+  if (task.completedDateTime) parts.push(`Completed: ${formatDateOnly(task.completedDateTime)}`);
 
   if (task.bucketId) parts.push(`Bucket: ${task.bucketId}`);
   if (task.planId) parts.push(`Plan: ${task.planId}`);
@@ -269,7 +260,7 @@ export function plannerCreateTool(): AgentTool {
         body,
       });
 
-      const due = task.dueDateTime ? ` due ${formatDate(task.dueDateTime)}` : "";
+      const due = task.dueDateTime ? ` due ${formatDateOnly(task.dueDateTime)}` : "";
       return {
         content: `Task created: "${task.title}" (id: ${task.id})${due}`,
       };

@@ -1,4 +1,5 @@
 import type { AgentTool, ToolContext, ToolResult } from "../types.js";
+import { errorResult, formatDateTime } from "../tool-utils.js";
 import { graphRequest } from "../../graph/client.js";
 import { buildODataQuery } from "../../graph/types.js";
 import type { GraphCollectionResponse } from "../../graph/client.js";
@@ -25,17 +26,6 @@ function formatRecipient(r: GraphRecipient): string {
   return name ? `${name} <${addr}>` : addr;
 }
 
-function formatDate(iso: string): string {
-  try {
-    return new Date(iso).toLocaleString("en-US", {
-      dateStyle: "medium",
-      timeStyle: "short",
-    });
-  } catch {
-    return iso;
-  }
-}
-
 function truncate(text: string, max: number): string {
   if (text.length <= max) return text;
   return text.slice(0, max) + "...";
@@ -44,7 +34,7 @@ function truncate(text: string, max: number): string {
 function formatMessageSummary(m: GraphMessage): string {
   const from = m.from ? formatRecipient(m.from) : "Unknown";
   const to = m.toRecipients?.map(formatRecipient).join(", ") ?? "";
-  const date = formatDate(m.receivedDateTime);
+  const date = formatDateTime(m.receivedDateTime);
   const read = m.isRead ? "Read" : "Unread";
   const attach = m.hasAttachments ? " [Attachments]" : "";
   const flagged = m.flag?.flagStatus === "flagged" ? " [Flagged]" : "";
@@ -88,10 +78,6 @@ function parseRecipients(input: unknown): GraphRecipient[] | null {
   }
 
   return null;
-}
-
-function errorResult(message: string): ToolResult {
-  return { content: `Error: ${message}`, isError: true };
 }
 
 // ---------------------------------------------------------------------------
@@ -188,7 +174,7 @@ export function mailReadTool(): AgentTool {
       const to = msg.toRecipients?.map(formatRecipient).join(", ") ?? "";
       const cc =
         msg.ccRecipients?.map(formatRecipient).join(", ") || "(none)";
-      const date = formatDate(msg.receivedDateTime);
+      const date = formatDateTime(msg.receivedDateTime);
       const body = msg.body?.content
         ? truncate(msg.body.content, 3000)
         : msg.bodyPreview ?? "";

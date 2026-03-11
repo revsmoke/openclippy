@@ -2,15 +2,12 @@ import { graphRequest } from "../../graph/client.js";
 import type { GraphCollectionResponse } from "../../graph/client.js";
 import { buildODataQuery } from "../../graph/types.js";
 import type { AgentTool, ToolContext, ToolResult } from "../types.js";
+import { missingParam } from "../tool-utils.js";
 import type { Person, Contact, PhysicalAddress } from "./types.js";
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
-
-function missingParam(name: string): ToolResult {
-  return { content: `Missing required parameter: ${name}`, isError: true };
-}
 
 function formatPerson(person: Person): string {
   const parts: string[] = [`- ${person.displayName}`];

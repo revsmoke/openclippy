@@ -1,29 +1,13 @@
 import { graphRequest } from "../../graph/client.js";
 import type { GraphCollectionResponse } from "../../graph/client.js";
 import type { AgentTool, ToolContext, ToolResult } from "../types.js";
+import { formatShortDate, formatFileSize } from "../tool-utils.js";
 import type {
   SharePointSite,
   SharePointList,
   SharePointListItem,
   SharePointDriveItem,
 } from "./types.js";
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-function formatFileSize(bytes?: number): string {
-  if (!bytes) return "";
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}
-
-function formatDate(iso?: string): string {
-  if (!iso) return "unknown";
-  const d = new Date(iso);
-  return d.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
-}
 
 // ---------------------------------------------------------------------------
 // sharepoint_sites — Search for SharePoint sites
@@ -105,8 +89,8 @@ export function sharepointSiteTool(): AgentTool {
       lines.push(`Name: ${site.displayName}`);
       if (site.description) lines.push(`Description: ${site.description}`);
       lines.push(`URL: ${site.webUrl}`);
-      lines.push(`Created: ${formatDate(site.createdDateTime)}`);
-      lines.push(`Modified: ${formatDate(site.lastModifiedDateTime)}`);
+      lines.push(`Created: ${formatShortDate(site.createdDateTime)}`);
+      lines.push(`Modified: ${formatShortDate(site.lastModifiedDateTime)}`);
       if (site.siteCollection) lines.push(`Host: ${site.siteCollection.hostname}`);
       lines.push(`ID: ${site.id}`);
 
@@ -159,7 +143,7 @@ export function sharepointListsTool(): AgentTool {
         parts.push(`- ${list.displayName}`);
         if (list.description) parts.push(`  Description: ${list.description}`);
         if (list.list?.template) parts.push(`  Template: ${list.list.template}`);
-        parts.push(`  Modified: ${formatDate(list.lastModifiedDateTime)}`);
+        parts.push(`  Modified: ${formatShortDate(list.lastModifiedDateTime)}`);
         parts.push(`  ID: ${list.id}`);
         return parts.join("\n");
       });
@@ -227,7 +211,7 @@ export function sharepointListItemsTool(): AgentTool {
         const parts: string[] = [];
         parts.push(`- Item ${item.id}`);
         parts.push(fieldEntries);
-        parts.push(`  Modified: ${formatDate(item.lastModifiedDateTime)}`);
+        parts.push(`  Modified: ${formatShortDate(item.lastModifiedDateTime)}`);
         if (item.webUrl) parts.push(`  URL: ${item.webUrl}`);
         return parts.join("\n");
       });
@@ -280,7 +264,7 @@ export function sharepointFilesTool(): AgentTool {
           parts.push(`- [file] ${item.name}${size ? ` — ${size}` : ""} (${mime})`);
         }
         if (item.webUrl) parts.push(`  URL: ${item.webUrl}`);
-        parts.push(`  Modified: ${formatDate(item.lastModifiedDateTime)}`);
+        parts.push(`  Modified: ${formatShortDate(item.lastModifiedDateTime)}`);
         parts.push(`  ID: ${item.id}`);
         return parts.join("\n");
       });

@@ -1,5 +1,6 @@
 import { graphRequest } from "../../graph/client.js";
 import type { AgentTool, ToolContext, ToolResult } from "../types.js";
+import { missingParam } from "../tool-utils.js";
 import type { Presence, PresenceAvailability } from "./types.js";
 
 // ---------------------------------------------------------------------------
@@ -37,10 +38,6 @@ function formatPresence(presence: Presence): string {
   }
 
   return lines.join("\n");
-}
-
-function missingParam(name: string): ToolResult {
-  return { content: `Missing required parameter: ${name}`, isError: true };
 }
 
 // ---------------------------------------------------------------------------

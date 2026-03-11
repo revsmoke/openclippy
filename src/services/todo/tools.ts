@@ -2,6 +2,7 @@ import { graphRequest } from "../../graph/client.js";
 import type { GraphCollectionResponse } from "../../graph/client.js";
 import { buildODataQuery } from "../../graph/types.js";
 import type { AgentTool, ToolContext, ToolResult } from "../types.js";
+import { missingParam } from "../tool-utils.js";
 import type { TodoTask, TodoTaskList, TaskStatus, TaskImportance, DateTimeTimeZone } from "./types.js";
 
 // ---------------------------------------------------------------------------
@@ -18,10 +19,6 @@ function formatTask(task: TodoTask): string {
   const due = task.dueDateTime ? ` (due: ${formatDueDate(task.dueDateTime)})` : "";
   const imp = task.importance !== "normal" ? ` [${task.importance}]` : "";
   return `${status} ${task.title}${due}${imp} — id: ${task.id}`;
-}
-
-function missingParam(name: string): ToolResult {
-  return { content: `Missing required parameter: ${name}`, isError: true };
 }
 
 // ---------------------------------------------------------------------------

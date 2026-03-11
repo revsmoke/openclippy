@@ -1,15 +1,12 @@
 import { graphRequest } from "../../graph/client.js";
 import type { GraphCollectionResponse } from "../../graph/client.js";
 import type { AgentTool, ToolContext, ToolResult } from "../types.js";
+import { missingParam } from "../tool-utils.js";
 import type { OnenoteNotebook, OnenoteSection, OnenotePage } from "./types.js";
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
-
-function missingParam(name: string): ToolResult {
-  return { content: `Error: ${name} is required`, isError: true };
-}
 
 function formatNotebook(nb: OnenoteNotebook): string {
   const parts: string[] = [`- ${nb.displayName}`];
