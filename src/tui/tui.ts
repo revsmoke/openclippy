@@ -9,6 +9,7 @@ import { collectTools } from "../agents/tool-registry.js";
 import { buildSystemPrompt } from "../agents/prompt-builder.js";
 import { AgentSession } from "../agents/session.js";
 import { runAgent } from "../agents/runtime.js";
+import { PluginRegistry } from "../plugins/registry.js";
 import type { ServiceId } from "../config/types.services.js";
 import type { ToolProfileId } from "../config/types.tools.js";
 import type { AgentTool, ToolContext } from "../services/types.js";
@@ -126,6 +127,20 @@ export async function startTui(): Promise<void> {
   registry.register(plannerModule);
   registry.register(onenoteModule);
   registry.register(sharepointModule);
+
+  // Load plugins
+  const pluginRegistry = new PluginRegistry(registry, scopeManager);
+  const pluginResults = await pluginRegistry.loadAll({
+    pluginConfig: config.plugins,
+  });
+  if (pluginResults.errors.length > 0) {
+    for (const err of pluginResults.errors) {
+      console.warn(`\u26A0\uFE0F  Plugin load failed: ${err.pluginPath}: ${err.error}`);
+    }
+  }
+  if (pluginResults.loaded.length > 0) {
+    console.log(`\uD83D\uDCE6 Loaded ${pluginResults.loaded.length} plugin(s): ${pluginResults.loaded.map(p => p.manifest.name).join(", ")}`);
+  }
 
   const servicesConfig = config.services ?? {};
   const profile = (config.tools?.profile ?? "standard") as ToolProfileId;

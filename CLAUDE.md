@@ -29,3 +29,13 @@ It uses the Microsoft Graph API to manage email, calendar, tasks, Teams, files, 
 - `pnpm dev` -- Run in dev mode with tsx
 - `openclippy login` -- Authenticate
 - `openclippy ask "..."` -- One-shot query
+
+## Shared Project Memory (NotebookLM)
+
+Project notebook: `Project Memory - openclippy - local`
+Notebook ID: `8ac84057-49bb-4ed2-aac0-1f94d3a237ce`
+
+Required workflow:
+1. Use `$project-kickoff-template` at task start.
+2. Query NotebookLM context before implementation.
+3. Use `project-update-history` at task end to append session memory.

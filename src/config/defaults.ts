@@ -34,4 +34,5 @@ export const DEFAULT_CONFIG: OpenClippyConfig = {
     port: 4100,
     host: "localhost",
   },
+  plugins: {},
 };

@@ -1,0 +1,7 @@
+{
+  "name": "example-weather",
+  "version": "1.0.0",
+  "description": "Example plugin that provides mock weather data. No external API calls -- returns fictional forecasts for demonstration purposes.",
+  "serviceId": "weather",
+  "entry": "index.js"
+}

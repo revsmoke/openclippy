@@ -107,6 +107,18 @@ agent:
 | `openclippy gateway stop` | Stop the gateway |
 | `openclippy gateway status` | Check gateway status |
 
+## Plugins
+
+Extend OpenClippy with custom service integrations. Plugins are ESM modules loaded from `~/.openclippy/plugins/` and configured via your `config.yaml`:
+
+```yaml
+plugins:
+  my-service:
+    enabled: true
+```
+
+See the [Plugin Authoring Guide](docs/plugin-authoring.md) for the full reference, or check out the [example plugin](examples/example-plugin/).
+
 ## Architecture
 
 ```
@@ -144,6 +156,7 @@ CLI / TUI / Teams Bot
 - [Azure AD Setup Guide](docs/setup.md) -- Register your app and configure permissions
 - [Service Reference](docs/services.md) -- All 10 services with capabilities, scopes, and tools
 - [Tool Reference](docs/tools.md) -- Detailed reference for all 61 tools with parameters
+- [Plugin Authoring Guide](docs/plugin-authoring.md) -- Build custom service integrations
 
 ## Requirements
 
