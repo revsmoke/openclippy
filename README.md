@@ -5,9 +5,49 @@
 <h1 align="center">OpenClippy</h1>
 
 <p align="center">
-  <strong>Autonomous AI work agent for Microsoft 365</strong><br>
-  OpenClippy connects to your M365 account via the Microsoft Graph API and manages email, calendar, tasks, Teams, files, and more through natural language.
+  <strong>Your autonomous AI work agent for Microsoft 365.</strong><br>
+  61 tools. 10 services. 4 permission levels. One agent that respects your security boundaries.
 </p>
+
+<p align="center">
+  <a href="#quick-start">Quick Start</a> &bull;
+  <a href="#features">Features</a> &bull;
+  <a href="#tool-profiles">Tool Profiles</a> &bull;
+  <a href="#architecture">Architecture</a> &bull;
+  <a href="#contributing">Contributing</a>
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="MIT License" />
+  <img src="https://img.shields.io/badge/TypeScript-strict-blue.svg" alt="TypeScript" />
+  <img src="https://img.shields.io/badge/Node.js-22%2B-green.svg" alt="Node.js 22+" />
+  <img src="https://img.shields.io/badge/Microsoft_Graph-API-0078d4.svg" alt="Microsoft Graph" />
+  <img src="https://img.shields.io/badge/LLM-Claude-cc785c.svg" alt="Claude" />
+</p>
+
+---
+
+## What Is OpenClippy?
+
+OpenClippy connects to your Microsoft 365 account via the Graph API and manages your email, calendar, tasks, Teams, files, and more through natural language. Ask it to triage your inbox, schedule meetings, create tasks from emails, search across your OneDrive — all from the terminal.
+
+```bash
+openclippy ask "What are my unread emails from my manager this week?"
+openclippy ask "Schedule a 30-minute meeting with the design team next Tuesday at 2pm"
+openclippy ask "Find all files in OneDrive related to the Q1 budget"
+```
+
+### Why OpenClippy?
+
+AI agents that manage your Microsoft 365 are powerful — but they need guardrails. OpenClippy was built with a few principles that set it apart:
+
+- **Focused scope.** 10 M365 services with 61 well-defined tools. Not an everything-agent — a purpose-built M365 agent.
+- **Granular permissions.** 4 tool profiles from `read-only` (can't change anything) to `admin` (org-wide ops). You decide what the agent can do.
+- **No stored secrets.** Device code auth via MSAL — your credentials stay with Microsoft, not in a config file.
+- **Auditable codebase.** TypeScript (strict mode), clean module boundaries, MIT licensed. Read every line if you want.
+- **Extensible.** Plugin system for custom service integrations. Drop an ESM module in `~/.openclippy/plugins/` and go.
+
+---
 
 ## Quick Start
 
@@ -35,6 +75,8 @@ openclippy chat
 
 See [docs/setup.md](docs/setup.md) for the full Azure AD app registration walkthrough.
 
+---
+
 ## Features
 
 OpenClippy provides **61 tools** across **10 Microsoft 365 services**:
@@ -51,6 +93,32 @@ OpenClippy provides **61 tools** across **10 Microsoft 365 services**:
 | **Planner** | View plans, tasks, and buckets; create and update Planner tasks |
 | **OneNote** | Browse notebooks and sections; read and create pages |
 | **SharePoint** | Search sites; browse lists, items, and document libraries |
+
+Enable only what you need — OpenClippy requests Graph API scopes only for enabled services.
+
+---
+
+## Tool Profiles
+
+This is the core of OpenClippy's security model. Tool profiles control which operations the agent can perform, so you're never wondering what it might do:
+
+| Profile | Allowed Operations | Use Case |
+|---------|-------------------|----------|
+| **read-only** | List, read, search, free/busy | Safe browsing — no changes to your data |
+| **standard** | Read-only + create, update, draft, flag, move, reply, forward | Day-to-day work (default) |
+| **full** | Standard + send, delete, share, upload | Full autonomy including destructive operations |
+| **admin** | Full + organization-wide operations | IT admin scenarios |
+
+Set your comfort level in config:
+
+```yaml
+agent:
+  toolProfile: "standard"  # read-only | standard | full | admin
+```
+
+Start with `read-only` to explore safely. Move to `standard` when you're comfortable. You're always in control.
+
+---
 
 ## Configuration
 
@@ -80,25 +148,7 @@ agent:
     name: "Clippy"
 ```
 
-Enable or disable services based on what you need. OpenClippy will only request Graph API scopes for enabled services.
-
-## Tool Profiles
-
-Tool profiles control which operations the agent can perform:
-
-| Profile | Allowed Operations | Use Case |
-|---------|-------------------|----------|
-| **read-only** | List, read, search, free/busy | Safe browsing -- no changes to your data |
-| **standard** | Read-only + create, update, draft, flag, move, reply, forward | Day-to-day work (default) |
-| **full** | Standard + send, delete, share, upload | Full autonomy including destructive operations |
-| **admin** | Full + organization-wide operations | IT admin scenarios |
-
-Set the profile in your config:
-
-```yaml
-agent:
-  toolProfile: "standard"  # read-only | standard | full | admin
-```
+---
 
 ## CLI Commands
 
@@ -114,6 +164,8 @@ agent:
 | `openclippy gateway stop` | Stop the gateway |
 | `openclippy gateway status` | Check gateway status |
 
+---
+
 ## Plugins
 
 Extend OpenClippy with custom service integrations. Plugins are ESM modules loaded from `~/.openclippy/plugins/` and configured via your `config.yaml`:
@@ -125,6 +177,8 @@ plugins:
 ```
 
 See the [Plugin Authoring Guide](docs/plugin-authoring.md) for the full reference, or check out the [example plugin](examples/example-plugin/).
+
+---
 
 ## Architecture
 
@@ -143,9 +197,12 @@ CLI / TUI / Teams Bot
 ```
 
 - **Auth:** MSAL device code flow (public client, no secret required)
-- **Graph client:** Custom fetch-based client -- lean and typed, not the heavy `@microsoft/microsoft-graph-client`
+- **Graph client:** Custom fetch-based client — lean and typed, not the heavy `@microsoft/microsoft-graph-client`
 - **Gateway:** Long-running daemon with WebSocket (for CLI/TUI clients) and HTTP (for Graph change notifications and Teams bot webhooks)
 - **Subscriptions:** Mail and Calendar support Graph change notifications for real-time updates
+- **Service modules:** Each M365 service implements a clean `ServiceModule` interface — capabilities, tools, optional health probes, optional subscriptions
+
+---
 
 ## Tech Stack
 
@@ -158,12 +215,30 @@ CLI / TUI / Teams Bot
 - ws for WebSocket gateway
 - vitest for testing, tsdown for building
 
+---
+
 ## Documentation
 
-- [Azure AD Setup Guide](docs/setup.md) -- Register your app and configure permissions
-- [Service Reference](docs/services.md) -- All 10 services with capabilities, scopes, and tools
-- [Tool Reference](docs/tools.md) -- Detailed reference for all 61 tools with parameters
-- [Plugin Authoring Guide](docs/plugin-authoring.md) -- Build custom service integrations
+- [Azure AD Setup Guide](docs/setup.md) — Register your app and configure permissions
+- [Service Reference](docs/services.md) — All 10 services with capabilities, scopes, and tools
+- [Tool Reference](docs/tools.md) — Detailed reference for all 61 tools with parameters
+- [Plugin Authoring Guide](docs/plugin-authoring.md) — Build custom service integrations
+
+---
+
+## Contributing
+
+OpenClippy is early-stage and contributions are welcome! Here are some ways to get involved:
+
+- **Try it out** and [open an issue](https://github.com/revsmoke/openclippy/issues) with bugs or feedback
+- **Add a service** — the `ServiceModule` interface makes it straightforward to add new Graph API integrations
+- **Write tests** — more coverage is always appreciated
+- **Improve docs** — especially setup guides and real-world usage examples
+- **Build a plugin** — and share it with the community
+
+Check out the issues labeled [`good first issue`](https://github.com/revsmoke/openclippy/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22) for entry points.
+
+---
 
 ## Requirements
 
@@ -181,6 +256,12 @@ pnpm dev              # Run in dev mode with tsx
 pnpm lint             # Lint with oxlint
 pnpm typecheck        # Type-check with tsc
 ```
+
+---
+
+## About the Name
+
+Yes, it's a [Clippy](https://en.wikipedia.org/wiki/Office_Assistant) reference. No, it won't ask if you need help writing a letter. (Unless you ask it to.)
 
 ## License
 

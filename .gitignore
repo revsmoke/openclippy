@@ -14,3 +14,9 @@ src/auth/*.json
 test-ws.mjs
 OpenClippy(Microsoft Graph format).json
 openclippy-portal-azure-com_overview.txt
+skills-explorer.html
+images/openclippy_sprites.svg
+.gitignore
+images/openclippy.html
+.claude/launch.json
+openclippy-promotion-plan.md
