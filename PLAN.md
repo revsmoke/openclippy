@@ -1,427 +1,451 @@
-# F.4 — Wizard Plugin Integration
+# Codebase Duplication & Redundancy Cleanup — Implementation Plan
 
-## Goal
-Show discovered plugins in the wizard's service selection step so users can enable/disable plugin services during setup.
+> **For agentic workers:** REQUIRED: Use superpowers:subagent-driven-development (if subagents available) or superpowers:executing-plans to implement this plan. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-## Current State
-- 712 tests passing, build clean ✅
-- F.4 implementation complete
+**Goal:** Eliminate all verified code duplication and redundancy across the OpenClippy codebase — shared utilities, credentials, service registration, service ID lists, test helpers, and dead code.
 
-## Implementation Plan (TDD) — COMPLETED
+**Architecture:** Extract duplicated helpers into shared modules (`tool-utils.ts`, `builtin-modules.ts`, test-utils/), consolidate Azure credentials to a single source of truth, and remove dead barrel exports. All changes are pure refactoring — no behavior changes.
 
-### Step 1: Write tests for `discoverPluginOptions` ✅
-- [x] Returns empty array when no plugins dir exists
-- [x] Returns PromptOption[] from valid manifests
-- [x] Skips plugins with invalid manifests (no crash)
-- [x] Sets `selected: false` for all plugin options
-- [x] Uses manifest name as label with "(plugin)" suffix, description as description
-- [x] Uses manifest serviceId as value
-
-### Step 2: Create `discoverPluginOptions` in wizard.ts ✅
-- [x] Import `scanPluginDirs` and `readManifest`
-- [x] Create `async function discoverPluginOptions(pluginsDir?: string): Promise<PromptOption[]>`
-- [x] Scan for plugins, read each manifest, build PromptOption
-- [x] Catch errors per-plugin gracefully
-
-### Step 3: Integrate into wizard flow ✅
-- [x] Before Step 5 (multiSelect), call `discoverPluginOptions()`
-- [x] Concat plugin options onto SERVICE_OPTIONS for multiSelect
-- [x] Pass combined service IDs to `buildServicesConfig`
-- [x] Add collision guard (dedup plugin serviceIds shadowing builtins)
-- [x] Discover plugins BEFORE readline to avoid mock stream timing issues
-
-### Step 4: Verify ✅
-- [x] `pnpm test` — 712 tests pass (703 original + 9 new)
-- [x] `pnpm build` — clean build
-- [x] QA review — dead code removed, collision guard added, integration tests added
+**Tech Stack:** TypeScript (strict ESM), vitest, pnpm, tsdown
 
 ---
 
-## Architecture
+## Context
 
-### Plugin Structure
+Three parallel exploration agents analyzed the entire codebase and found **12 categories of duplication** across 30+ files. A Plan agent verified every finding against the actual source. This plan addresses all confirmed duplications in priority order.
 
-```
-~/.openclippy/plugins/
-  my-plugin/
-    manifest.json          # Plugin metadata
-    index.js               # ESM module exporting ServiceModule
-```
-
-### manifest.json
-
-```json
-{
-  "name": "my-plugin",
-  "version": "1.0.0",
-  "description": "Custom service for Jira integration",
-  "serviceId": "jira",
-  "entry": "index.js",
-  "scopes": {
-    "required": [],
-    "optional": []
-  }
-}
-```
-
-### Config Integration
-
-```yaml
-plugins:
-  jira:
-    enabled: true
-    path: "~/.openclippy/plugins/my-plugin"  # optional, auto-discovered if omitted
-    customSetting: "https://jira.example.com"
-```
-
-### Loading Flow
-
-```
-startup → scan ~/.openclippy/plugins/ → validate manifests → import() entry
-        → validate ServiceModule shape → register in ServiceRegistry
-        → merge scopes into ScopeManager → merge config into services
-```
+Key risks: (1) onenote's `missingParam` uses a different message format — standardizing may break string-matching tests; (2) `vi.mock()` hoisting in vitest requires careful handling when extracting mock factories; (3) gateway credential change adds a new import dependency.
 
 ---
 
-## Files to Create
+## Chunk 1: Shared Service Tool Utilities
 
-| File | Purpose |
-|------|---------|
-| `src/plugins/types.ts` | PluginManifest type, PluginLoadResult type |
-| `src/plugins/manifest.ts` | Manifest validation (read + validate manifest.json) |
-| `src/plugins/loader.ts` | Dynamic import + ServiceModule shape validation |
-| `src/plugins/scanner.ts` | Directory scanner (find plugins in plugins dir) |
-| `src/plugins/registry.ts` | PluginRegistry — orchestrates scan → load → register |
-| `src/plugins/errors.ts` | Plugin-specific error types |
-| `src/plugins/manifest.test.ts` | Tests for manifest validation |
-| `src/plugins/loader.test.ts` | Tests for dynamic loading + shape validation |
-| `src/plugins/scanner.test.ts` | Tests for directory scanning |
-| `src/plugins/registry.test.ts` | Tests for full plugin lifecycle |
+**Goal:** Extract `missingParam`, `errorResult`, date formatters, `formatFileSize`, `requireString`, `requireArray`, and `getErrorMessage` into a single shared module.
 
-## Files to Modify
+### Task 1.1: Create tool-utils with RED tests
 
-| File | Change |
-|------|--------|
-| `src/config/types.services.ts` | Change `ServiceId` from union to `string` (with branded type) |
-| `src/config/types.base.ts` | Add `plugins?: PluginsConfig` section |
-| `src/config/defaults.ts` | Add `plugins: {}` default |
-| `src/auth/scope-manager.ts` | Accept dynamic scope registration from plugins |
-| `src/services/registry.ts` | Accept `string` IDs (was `ServiceId` union) |
-| `src/cli/ask.ts` | Add plugin loading after builtin registration |
-| `src/tui/tui.ts` | Add plugin loading after builtin registration |
-| `src/cli/wizard.ts` | Show discovered plugins in service selection step |
+**Files:**
+- Create: `src/services/tool-utils.test.ts`
+- Create: `src/services/tool-utils.ts` (empty stub)
 
----
-
-## Phase A: Plugin Types & Manifest Validation (TDD)
-
-### A.1 — Plugin Types (`src/plugins/types.ts`)
+- [x] **Step 1: Write failing tests for `missingParam`**
 
 ```typescript
-export type PluginManifest = {
-  name: string;                    // Human-readable name
-  version: string;                 // Semver
-  description: string;             // What this plugin does
-  serviceId: string;               // Unique service ID (e.g., "jira")
-  entry: string;                   // Relative path to ESM entry (e.g., "index.js")
-  scopes?: {
-    required?: string[];           // Graph scopes needed
-    optional?: string[];           // Nice-to-have scopes
-  };
-};
+import { describe, it, expect } from "vitest";
+import { missingParam } from "./tool-utils.js";
 
-export type PluginLoadResult = {
-  manifest: PluginManifest;
-  path: string;                    // Absolute path to plugin directory
-  module: ServiceModule;           // The loaded ServiceModule
-};
-
-export type PluginError = {
-  pluginPath: string;
-  error: string;
-};
-```
-
-### A.2 — Manifest Validation Tests (write first)
-
-Tests for `src/plugins/manifest.test.ts`:
-- [ ] Valid manifest passes validation
-- [ ] Missing `name` field → error
-- [ ] Missing `serviceId` field → error
-- [ ] Missing `entry` field → error
-- [ ] Empty `serviceId` → error
-- [ ] Non-string `version` → error
-- [ ] Optional `scopes` section validates correctly
-- [ ] Extra fields are ignored (forward compatibility)
-
-### A.3 — Manifest Validation Implementation
-
-`src/plugins/manifest.ts`:
-- `validateManifest(data: unknown): { valid: true; manifest: PluginManifest } | { valid: false; error: string }`
-- `readManifest(pluginDir: string): Promise<PluginManifest>` — reads + validates manifest.json
-
----
-
-## Phase B: ServiceId Relaxation (TDD)
-
-### B.1 — Widen ServiceId to Accept Plugin IDs
-
-**Current:** `ServiceId` is a fixed union of 10 strings.
-**Target:** `ServiceId` becomes `string`, with a `BuiltinServiceId` union for the 10 known services.
-
-```typescript
-// src/config/types.services.ts
-export type BuiltinServiceId =
-  | "mail" | "calendar" | "todo" | "teams-chat"
-  | "onedrive" | "planner" | "onenote" | "sharepoint"
-  | "people" | "presence";
-
-export type ServiceId = string;  // Accepts builtins + plugin IDs
-```
-
-### B.2 — Update ServiceRegistry to use `string`
-
-The `Map<ServiceId, ServiceModule>` already works since `ServiceId` becomes `string`. Verify:
-- [ ] Existing tests pass with widened type
-- [ ] Registry accepts arbitrary string IDs
-- [ ] Config `ServicesConfig` type now accepts `Record<string, ServiceConfig>`
-
-### B.3 — Update ScopeManager for Dynamic Scopes
-
-Add method to `ScopeManager`:
-```typescript
-registerPluginScopes(serviceId: string, scopes: { required: string[]; optional: string[] }): void
-```
-
-Tests:
-- [ ] `registerPluginScopes` adds scopes to the scope map
-- [ ] `computeRequiredScopes` includes plugin scopes when plugin service is enabled
-- [ ] Duplicate scope registration replaces previous entry
-- [ ] Plugin scopes don't interfere with builtin scopes
-
----
-
-## Phase C: Plugin Scanner (TDD)
-
-### C.1 — Scanner Tests (write first)
-
-Tests for `src/plugins/scanner.test.ts`:
-- [ ] Returns empty array when plugins dir doesn't exist
-- [ ] Returns empty array when plugins dir is empty
-- [ ] Discovers directories with manifest.json
-- [ ] Skips directories without manifest.json
-- [ ] Skips files (non-directories)
-- [ ] Returns absolute paths
-- [ ] Handles config-specified plugin paths (explicit path override)
-
-### C.2 — Scanner Implementation
-
-`src/plugins/scanner.ts`:
-```typescript
-export async function scanPluginDirs(options?: {
-  pluginsDir?: string;           // Default: ~/.openclippy/plugins/
-  configPaths?: Record<string, string>;  // Explicit paths from config
-}): Promise<string[]>            // Returns absolute paths to plugin directories
-```
-
----
-
-## Phase D: Plugin Loader (TDD)
-
-### D.1 — Loader Tests (write first)
-
-Tests for `src/plugins/loader.test.ts`:
-- [ ] Loads valid ESM module exporting ServiceModule
-- [ ] Rejects module with missing `id` property
-- [ ] Rejects module with missing `tools` function
-- [ ] Rejects module with missing `meta` property
-- [ ] Rejects module with missing `capabilities` property
-- [ ] Validates `id` matches manifest `serviceId`
-- [ ] Returns PluginLoadResult on success
-- [ ] Wraps import() errors in PluginError
-
-### D.2 — Loader Implementation
-
-`src/plugins/loader.ts`:
-```typescript
-export async function loadPlugin(pluginDir: string): Promise<PluginLoadResult>
-
-// Validates the exported object has ServiceModule shape
-export function validateServiceModule(obj: unknown): obj is ServiceModule
-```
-
-**Shape validation** (runtime, not TypeScript — we can't trust external code):
-- `id` is string
-- `meta` has `label`, `description`, `requiredScopes` (array)
-- `capabilities` has `read`, `write`, `delete`, `search`, `subscribe` (all boolean)
-- `tools` is function returning array
-- `status?.probe` is function if present
-- `subscriptions?.resources` is array if present
-- `promptHints` is function if present
-
----
-
-## Phase E: Plugin Registry (TDD)
-
-### E.1 — Registry Tests (write first)
-
-Tests for `src/plugins/registry.test.ts`:
-- [ ] `loadAll` discovers and loads plugins from directory
-- [ ] `loadAll` skips invalid manifests with warning
-- [ ] `loadAll` skips failed loads with warning
-- [ ] `loadAll` rejects duplicate serviceId (builtin collision)
-- [ ] `loadAll` rejects duplicate serviceId (plugin-plugin collision)
-- [ ] Loaded plugins register into ServiceRegistry
-- [ ] Loaded plugins register scopes into ScopeManager
-- [ ] Plugin config merges into ServicesConfig
-- [ ] `getLoadErrors` returns all errors encountered
-- [ ] Empty plugins directory → no errors, no plugins loaded
-
-### E.2 — Registry Implementation
-
-`src/plugins/registry.ts`:
-```typescript
-export class PluginRegistry {
-  constructor(private serviceRegistry: ServiceRegistry, private scopeManager: ScopeManager);
-
-  async loadAll(options?: {
-    pluginsDir?: string;
-    pluginConfig?: PluginsConfig;
-  }): Promise<{
-    loaded: PluginLoadResult[];
-    errors: PluginError[];
-  }>;
-
-  getLoadedPlugins(): PluginLoadResult[];
-  getLoadErrors(): PluginError[];
-}
-```
-
----
-
-## Phase F: CLI Integration
-
-### F.1 — Add Plugin Loading to ask.ts
-
-After builtin service registration, before tool collection:
-
-```typescript
-// Load plugins
-const pluginRegistry = new PluginRegistry(registry, scopeManager);
-const pluginResults = await pluginRegistry.loadAll({
-  pluginConfig: config.plugins,
+describe("missingParam", () => {
+  it("returns ToolResult with isError true", () => {
+    const result = missingParam("userId");
+    expect(result).toEqual({
+      content: "Missing required parameter: userId",
+      isError: true,
+    });
+  });
 });
-if (pluginResults.errors.length > 0) {
-  for (const err of pluginResults.errors) {
-    console.warn(`⚠️  Plugin load failed: ${err.pluginPath}: ${err.error}`);
-  }
+```
+
+- [x] **Step 2: Write failing tests for `errorResult`**
+
+```typescript
+describe("errorResult", () => {
+  it("returns ToolResult with Error prefix", () => {
+    const result = errorResult("something broke");
+    expect(result).toEqual({
+      content: "Error: something broke",
+      isError: true,
+    });
+  });
+});
+```
+
+- [x] **Step 3: Write failing tests for `getErrorMessage`**
+
+```typescript
+describe("getErrorMessage", () => {
+  it("extracts message from Error instance", () => {
+    expect(getErrorMessage(new Error("boom"))).toBe("boom");
+  });
+  it("stringifies non-Error values", () => {
+    expect(getErrorMessage("string error")).toBe("string error");
+    expect(getErrorMessage(42)).toBe("42");
+    expect(getErrorMessage(null)).toBe("null");
+  });
+});
+```
+
+- [x] **Step 4: Write failing tests for date formatters**
+
+```typescript
+describe("formatShortDate", () => {
+  it("formats ISO string to short date", () => {
+    expect(formatShortDate("2025-01-15T10:30:00Z")).toMatch(/Jan 15, 2025/);
+  });
+  it("returns 'unknown' for undefined", () => {
+    expect(formatShortDate(undefined)).toBe("unknown");
+  });
+});
+
+describe("formatDateTime", () => {
+  it("formats ISO string with time", () => {
+    const result = formatDateTime("2025-01-15T14:30:00Z");
+    expect(result).toContain("2025");
+    expect(result).toContain("Jan");
+  });
+  it("returns original string on invalid date", () => {
+    expect(formatDateTime("not-a-date")).toBe("not-a-date");
+  });
+});
+
+describe("formatDateOnly", () => {
+  it("extracts YYYY-MM-DD from ISO string", () => {
+    expect(formatDateOnly("2025-01-15T10:30:00Z")).toBe("2025-01-15");
+  });
+  it("returns undefined for undefined input", () => {
+    expect(formatDateOnly(undefined)).toBeUndefined();
+  });
+});
+```
+
+- [x] **Step 5: Write failing tests for `formatFileSize`**
+
+```typescript
+describe("formatFileSize", () => {
+  it("formats bytes to human-readable", () => {
+    expect(formatFileSize(1024)).toBe("1.0 KB");
+    expect(formatFileSize(1048576)).toBe("1.0 MB");
+  });
+  it("returns 'unknown' for undefined", () => {
+    expect(formatFileSize(undefined)).toBe("unknown");
+  });
+});
+```
+
+- [x] **Step 6: Write failing tests for `requireString` and `requireArray`**
+
+```typescript
+describe("requireString", () => {
+  it("returns trimmed string when present", () => {
+    expect(requireString({ name: " hello " }, "name")).toBe("hello");
+  });
+  it("returns ToolResult error when missing", () => {
+    const result = requireString({}, "name");
+    expect(result).toHaveProperty("isError", true);
+  });
+});
+
+describe("requireArray", () => {
+  it("returns array when present", () => {
+    expect(requireArray({ ids: [1, 2] }, "ids")).toEqual([1, 2]);
+  });
+  it("returns ToolResult error when missing", () => {
+    const result = requireArray({}, "ids");
+    expect(result).toHaveProperty("isError", true);
+  });
+});
+```
+
+- [x] **Step 7: Run tests to verify they all fail**
+
+Run: `pnpm test src/services/tool-utils.test.ts`
+Expected: ALL FAIL (module doesn't exist yet)
+
+- [x] **Step 8: Commit RED tests**
+
+```bash
+git add src/services/tool-utils.test.ts
+git commit -m "test(red): add tests for shared tool-utils module"
+```
+
+### Task 1.2: Implement tool-utils (GREEN)
+
+**Files:**
+- Create: `src/services/tool-utils.ts`
+
+- [x] **Step 1: Implement all functions in `src/services/tool-utils.ts`**
+
+Implement `missingParam`, `errorResult`, `getErrorMessage`, `formatShortDate`, `formatDateTime`, `formatDateOnly`, `formatFileSize`, `requireString`, `requireArray` — all typed against `ToolResult` from `./types.js`.
+
+- [x] **Step 2: Run tests to verify they pass**
+
+Run: `pnpm test src/services/tool-utils.test.ts`
+Expected: ALL PASS
+
+- [x] **Step 3: Commit GREEN implementation**
+
+```bash
+git add src/services/tool-utils.ts src/services/tool-utils.test.ts
+git commit -m "feat: add shared tool-utils module (missingParam, errorResult, formatters)"
+```
+
+### Task 1.3: Replace local helpers in service tool files
+
+**Files to modify** (remove local functions, import from `./tool-utils.js`):
+- `src/services/todo/tools.ts` — remove `missingParam` (L23-25)
+- `src/services/onedrive/tools.ts` — remove `missingParam` (L42-44), `formatDate` (L24-28), `formatSize` (L17-22)
+- `src/services/planner/tools.ts` — remove `missingParam` (L16-18), `formatDate` (L39-42)
+- `src/services/presence/tools.ts` — remove `missingParam` (L42-44)
+- `src/services/people/tools.ts` — remove `missingParam` (L11-13)
+- `src/services/onenote/tools.ts` — remove `missingParam` (L10-12, **note: different message format — will standardize**)
+- `src/services/mail/tools.ts` — remove `errorResult` (L93-95), `formatDate` (L28-37)
+- `src/services/teams-chat/tools.ts` — remove `errorResult` (L41-43)
+- `src/services/sharepoint/tools.ts` — remove `formatDate` (L22-26), `formatFileSize` (L15-20)
+- `src/services/calendar/tools.ts` — remove `requireString` (L128-138), `requireArray` (L140-149)
+
+Do each file one at a time. After each file:
+
+- [x] **Step 1: Replace helpers in `todo/tools.ts`, run `pnpm test` — verify green**
+- [x] **Step 2: Replace helpers in `onedrive/tools.ts`, run `pnpm test` — verify green**
+- [x] **Step 3: Replace helpers in `planner/tools.ts`, run `pnpm test` — verify green**
+- [x] **Step 4: Replace helpers in `presence/tools.ts`, run `pnpm test` — verify green**
+- [x] **Step 5: Replace helpers in `people/tools.ts`, run `pnpm test` — verify green**
+- [x] **Step 6: Replace helpers in `onenote/tools.ts` (update test assertions for new message format), run `pnpm test` — verify green**
+- [x] **Step 7: Replace helpers in `mail/tools.ts`, run `pnpm test` — verify green**
+- [x] **Step 8: Replace helpers in `teams-chat/tools.ts`, run `pnpm test` — verify green**
+- [x] **Step 9: Replace helpers in `sharepoint/tools.ts`, run `pnpm test` — verify green**
+- [x] **Step 10: Replace helpers in `calendar/tools.ts`, run `pnpm test` — verify green**
+- [x] **Step 11: Commit all service tool replacements**
+
+```bash
+git commit -m "refactor: replace local helpers with shared tool-utils across all services"
+```
+
+### Task 1.4: Replace `getErrorMessage` pattern across non-service files
+
+**Files to modify** — replace `err instanceof Error ? err.message : String(err)` with `getErrorMessage(err)`:
+- `src/gateway/server-http.ts`, `src/gateway/server-ws.ts`
+- `src/services/registry.ts`
+- `src/cli/services.ts`, `src/cli/gateway.ts`, `src/cli/config.ts`, `src/cli/ask.ts`, `src/cli/status.ts`, `src/cli/login.ts`
+- `src/tui/tui.ts`
+- `src/plugins/registry.ts`
+- `src/agents/runtime.ts`
+- Service module files (`calendar/module.ts`, `mail/module.ts`, etc.)
+
+- [x] **Step 1: Replace pattern in all files listed above**
+- [x] **Step 2: Run `pnpm test` — verify green**
+- [x] **Step 3: Run `pnpm build` — verify clean**
+- [x] **Step 4: Commit**
+
+```bash
+git commit -m "refactor: use getErrorMessage() utility across codebase"
+```
+
+---
+
+## Chunk 2: Azure Credential Consolidation
+
+**Goal:** Single source of truth for default Azure AD client/tenant IDs.
+
+### Task 2.1: Consolidate credential fallbacks
+
+**Files:**
+- Modify: `src/auth/credentials.ts` — import `DEFAULT_CONFIG` from `../config/defaults.js`, use as fallback
+- Modify: `src/gateway/server.ts` — import `resolveAzureCredentials()`, use in `renewToken()`
+
+- [x] **Step 1: Update `credentials.ts` to use `DEFAULT_CONFIG` for fallback values**
+- [x] **Step 2: Run `pnpm test` — verify green**
+- [x] **Step 3: Update `gateway/server.ts` `renewToken()` to use `resolveAzureCredentials()`**
+- [x] **Step 4: Run `pnpm test` — verify green**
+- [x] **Step 5: Run `pnpm build` — verify clean**
+- [x] **Step 6: Commit**
+
+```bash
+git commit -m "refactor: consolidate Azure credentials to single source of truth"
+```
+
+---
+
+## Chunk 3: Service Registration DRY
+
+**Goal:** Extract the duplicated 10-module import + `registry.register()` block into a shared helper.
+
+### Task 3.1: Create builtin-modules with RED tests
+
+**Files:**
+- Create: `src/services/builtin-modules.test.ts`
+- Create: `src/services/builtin-modules.ts`
+
+- [x] **Step 1: Write failing tests** — `builtinModules` has 10 entries with unique IDs, `registerBuiltinModules()` registers all
+- [x] **Step 2: Run tests to verify they fail**
+- [x] **Step 3: Implement `builtin-modules.ts`** — import all 10 modules, export array + helper function
+- [x] **Step 4: Run tests to verify they pass**
+- [x] **Step 5: Commit**
+
+```bash
+git commit -m "feat: add builtin-modules helper for service registration"
+```
+
+### Task 3.2: Replace registration in ask.ts and tui.ts
+
+**Files:**
+- Modify: `src/cli/ask.ts` — remove 10 module imports + 10 register calls, use `registerBuiltinModules()`
+- Modify: `src/tui/tui.ts` — same replacement
+
+- [x] **Step 1: Update `ask.ts`**
+- [x] **Step 2: Run `pnpm test` — verify green**
+- [x] **Step 3: Update `tui.ts`**
+- [x] **Step 4: Run `pnpm test` — verify green**
+- [x] **Step 5: Commit**
+
+```bash
+git commit -m "refactor: use registerBuiltinModules() in ask and tui"
+```
+
+---
+
+## Chunk 4: Service ID List Consolidation
+
+**Goal:** Derive `BuiltinServiceId` type and `ALL_SERVICES` array from a single `as const` tuple.
+
+### Task 4.1: Define canonical ID list
+
+**Files:**
+- Modify: `src/services/builtin-modules.ts` — add `BUILTIN_SERVICE_IDS` as const tuple
+- Modify: `src/config/types.services.ts` — derive `BuiltinServiceId` from the tuple type
+- Modify: `src/cli/services.ts` — remove local `ALL_SERVICES`, import `BUILTIN_SERVICE_IDS`
+
+- [x] **Step 1: Add `BUILTIN_SERVICE_IDS` tuple to `builtin-modules.ts`**
+
+```typescript
+export const BUILTIN_SERVICE_IDS = [
+  "mail", "calendar", "todo", "teams-chat", "onedrive",
+  "planner", "onenote", "sharepoint", "people", "presence",
+] as const;
+```
+
+- [x] **Step 2: Update `types.services.ts` to derive the type from the tuple**
+- [x] **Step 3: Update `cli/services.ts` to import `BUILTIN_SERVICE_IDS`**
+- [x] **Step 4: Add a test that `BUILTIN_SERVICE_IDS` matches `builtinModules` IDs**
+- [x] **Step 5: Run `pnpm test` — verify green**
+- [x] **Step 6: Run `pnpm build` — verify clean (check for circular import issues)**
+- [x] **Step 7: Commit**
+
+```bash
+git commit -m "refactor: single source of truth for builtin service ID list"
+```
+
+**Note:** Watch for circular imports — `builtin-modules.ts` imports service modules which import from `types.services.ts`. If `types.services.ts` imports back from `builtin-modules.ts`, that's circular. If this happens, keep the const tuple in `types.services.ts` instead and have `builtin-modules.ts` import it.
+
+---
+
+## Chunk 5: Shared Test Helpers
+
+**Goal:** Extract duplicated mock setup, context fixtures, and temp directory management into reusable test utilities.
+
+### Task 5.1: Create graph mock factory
+
+**Files:**
+- Create: `src/test-utils/graph-mock.ts`
+- Create: `src/test-utils/graph-mock.test.ts`
+
+- [x] **Step 1: Write tests for `graphClientMockFactory()` and `createToolContext()`**
+- [x] **Step 2: Implement the factories**
+
+```typescript
+export function graphClientMockFactory() {
+  return {
+    graphRequest: vi.fn(),
+    graphPaginate: vi.fn(),
+    GraphApiError: class GraphApiError extends Error { /* full mock */ },
+  };
+}
+
+export function createToolContext(overrides?: Partial<ToolContext>): ToolContext {
+  return { token: "test-token", timezone: "America/New_York", ...overrides };
 }
 ```
 
-### F.2 — Add Plugin Loading to tui.ts
+- [x] **Step 3: Run tests — verify green**
+- [x] **Step 4: Commit**
 
-Same pattern as ask.ts.
+### Task 5.2: Create temp directory helper
 
-### F.3 — Config Types Update
+**Files:**
+- Create: `src/test-utils/temp-dir.ts`
+- Create: `src/test-utils/temp-dir.test.ts`
 
-Add to `types.base.ts`:
-```typescript
-export type PluginConfig = {
-  enabled?: boolean;
-  path?: string;        // Override plugin directory
-  [key: string]: unknown;  // Plugin-specific settings
-};
+- [x] **Step 1: Write tests for temp dir helper**
+- [x] **Step 2: Implement with automatic cleanup via afterEach/afterAll**
+- [x] **Step 3: Run tests — verify green**
+- [x] **Step 4: Commit**
 
-export type PluginsConfig = Record<string, PluginConfig>;
+### Task 5.3: Roll out graph mock to service test files
+
+**Files to modify** (pilot one first, then batch):
+- `src/services/todo/tools.test.ts` (pilot)
+- `src/services/onedrive/tools.test.ts`
+- `src/services/planner/tools.test.ts`
+- `src/services/mail/tools.test.ts`
+- `src/services/calendar/tools.test.ts`
+- `src/services/people/tools.test.ts`
+- `src/services/presence/tools.test.ts`
+- `src/services/onenote/tools.test.ts`
+- `src/services/sharepoint/tools.test.ts`
+- `src/services/teams-chat/tools.test.ts`
+- `src/gateway/subscriptions.test.ts`
+
+- [x] **Step 1: Update `todo/tools.test.ts` as pilot — verify green**
+- [x] **Step 2: Roll out to remaining 10 test files**
+- [x] **Step 3: Run `pnpm test` — verify all green**
+- [x] **Step 4: Commit**
+
+```bash
+git commit -m "refactor: use shared graph mock factory across all service tests"
 ```
 
-### F.4 — Wizard Update (optional, defer if needed)
+### Task 5.4: Roll out temp dir helper to test files
 
-If plugins are installed, the wizard's service selection step can show them alongside builtins.
+**Files to modify:**
+- `src/cli/wizard.test.ts`
+- `src/plugins/scanner.test.ts`, `registry.test.ts`, `loader.test.ts`
+- `src/memory/store.test.ts`
+- `src/config/config.test.ts`
+- `src/secrets/resolve.test.ts`
 
----
+- [x] **Step 1: Update all files to use shared temp dir helper**
+- [x] **Step 2: Run `pnpm test` — verify green**
+- [x] **Step 3: Commit**
 
-## Phase G: Integration Tests
-
-- [ ] End-to-end: Create mock plugin on disk → load → register → verify tools appear
-- [ ] Plugin tools are filtered by tool profiles
-- [ ] Plugin tools execute correctly via agent runtime
-- [ ] Plugin health probes run alongside builtin probes
-- [ ] Bad plugin doesn't crash startup (graceful skip)
-
----
-
-## Phase H: Documentation & Polish
-
-- [x] Update README.md with plugin authoring section
-- [x] Create `docs/plugin-authoring.md` with guide
-- [x] Add example plugin skeleton to `examples/example-plugin/`
-- [ ] Run full test suite
-- [ ] Run build
-- [ ] Manual smoke test with example plugin
+```bash
+git commit -m "refactor: use shared temp dir helper across test files"
+```
 
 ---
 
-## TDD Implementation Order
+## Chunk 6: Cleanup
 
-### Phase A: Types & Manifest (tests first)
-1. Write `src/plugins/manifest.test.ts` — expect red
-2. Create `src/plugins/types.ts` + `src/plugins/manifest.ts` — go green
+**Goal:** Remove dead barrel exports and any remaining dead code.
 
-### Phase B: ServiceId Relaxation
-1. Change `ServiceId` type, add `BuiltinServiceId`
-2. Update `ScopeManager` with `registerPluginScopes()`
-3. Write scope manager tests — go green
-4. Verify all 632 existing tests still pass
+### Task 6.1: Remove unused barrel files
 
-### Phase C: Scanner (tests first)
-1. Write `src/plugins/scanner.test.ts` — expect red
-2. Implement `src/plugins/scanner.ts` — go green
+**Files:**
+- Delete: `src/config/types.ts` (zero imports confirmed by grep)
+- Delete: `src/plugins/index.ts` (zero imports confirmed by grep)
 
-### Phase D: Loader (tests first)
-1. Write `src/plugins/loader.test.ts` — expect red
-2. Implement `src/plugins/loader.ts` — go green
+- [x] **Step 1: Verify zero imports with grep**
+- [x] **Step 2: Delete both files**
+- [x] **Step 3: Run `pnpm test` — verify green**
+- [x] **Step 4: Run `pnpm build` — verify clean**
+- [x] **Step 5: Commit**
 
-### Phase E: Registry (tests first)
-1. Write `src/plugins/registry.test.ts` — expect red
-2. Implement `src/plugins/registry.ts` — go green
+```bash
+git commit -m "chore: remove unused barrel export files"
+```
 
-### Phase F: CLI Integration
-1. Add config types
-2. Wire plugin loading into `ask.ts` and `tui.ts`
-3. Verify all tests pass
+### Task 6.2: Final verification
 
-### Phase G: Integration Tests
-1. Write integration tests
-2. Verify end-to-end flow
-
-### Phase H: Docs & Polish
-1. Update README, create authoring guide
-2. Create example plugin
-3. Final test suite + build
+- [x] **Step 1: Run `pnpm test` — all tests pass**
+- [x] **Step 2: Run `pnpm build` — clean**
+- [x] **Step 3: Grep audit — no remaining local `missingParam`/`errorResult` definitions**
+- [x] **Step 4: Grep audit — no remaining `instanceof Error ? err.message` pattern**
+- [x] **Step 5: Grep audit — `bfe7dd6e` (Azure client ID) appears only in `config/defaults.ts`**
 
 ---
 
 ## Verification
 
-1. **Unit tests:** `pnpm test` — all 632 existing + ~60 new tests pass
-2. **Build:** `pnpm build` succeeds
-3. **No regressions:** All builtin services work identically
-4. **Plugin loading:** Create example plugin → loads → tools available
-5. **Error handling:** Invalid plugin → logged warning, doesn't crash
-6. **Scope integration:** Plugin scopes included in auth flow
-7. **Tool profile compatibility:** Plugin tools filtered by profile correctly
+After all chunks are complete:
 
----
-
-## Key Design Decisions
-
-| Decision | Reasoning | Alternatives |
-|----------|-----------|-------------|
-| `ServiceId` → `string` (not branded) | Simplest change, plugins need arbitrary IDs | Keep union + module augmentation (complex), branded string type (extra boilerplate) |
-| Manifest.json per plugin | Standard, human-readable, versionable | Package.json field (assumes npm), inline config only (no metadata) |
-| Shape validation at load time | Can't trust external code with TypeScript types | Trust exports (unsafe), require TypeScript source (limits users) |
-| Graceful skip on plugin error | One bad plugin shouldn't kill the app | Fail fast (harsh), retry (complex) |
-| Scopes in manifest + ScopeManager | Plugin scopes need to participate in auth flow | Separate scope config (confusing), ignore scopes (broken auth) |
-| No npm dependency for plugins | Keeps core lightweight, ESM `import()` is enough | Use a plugin framework (overkill for our needs) |
+1. `pnpm test` — all tests pass (712+ baseline, plus new utility tests)
+2. `pnpm build` — clean build, no TypeScript errors
+3. Grep audit confirms single-source-of-truth for each extracted utility
