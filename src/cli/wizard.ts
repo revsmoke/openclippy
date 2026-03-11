@@ -2,6 +2,8 @@ import * as readline from "node:readline";
 import { saveConfig } from "../config/config.js";
 import { DEFAULT_CONFIG } from "../config/defaults.js";
 import { CONFIG_PATH } from "../config/paths.js";
+import { scanPluginDirs } from "../plugins/scanner.js";
+import { readManifest } from "../plugins/manifest.js";
 import { prompt, select, multiSelect, confirm } from "./prompt-helpers.js";
 import type { PromptOption } from "./prompt-helpers.js";
 import type { OpenClippyConfig } from "../config/types.base.js";
@@ -21,8 +23,41 @@ const SERVICE_OPTIONS: PromptOption[] = [
   { label: "Presence", value: "presence", description: "Online status", selected: true },
 ];
 
-/** All known service IDs (matches SERVICE_OPTIONS order). */
-const ALL_SERVICE_IDS = SERVICE_OPTIONS.map((o) => o.value);
+/**
+ * Discover installed plugins and return them as PromptOptions for the wizard.
+ * Scans the plugins directory for valid manifests and builds options with
+ * `selected: false` so plugins are opt-in during setup.
+ *
+ * Gracefully skips plugins with invalid or unreadable manifests.
+ */
+export async function discoverPluginOptions(
+  pluginsDir?: string,
+): Promise<PromptOption[]> {
+  let pluginDirs: string[];
+  try {
+    pluginDirs = await scanPluginDirs({ pluginsDir });
+  } catch {
+    return [];
+  }
+
+  const options: PromptOption[] = [];
+
+  for (const dir of pluginDirs) {
+    try {
+      const manifest = await readManifest(dir);
+      options.push({
+        label: `${manifest.name} (plugin)`,
+        value: manifest.serviceId,
+        description: manifest.description,
+        selected: false,
+      });
+    } catch {
+      // Skip plugins with invalid manifests — don't crash the wizard
+    }
+  }
+
+  return options;
+}
 
 /** Tool profile options for the wizard. */
 const PROFILE_OPTIONS: PromptOption[] = [
@@ -35,14 +70,20 @@ const PROFILE_OPTIONS: PromptOption[] = [
 /**
  * Run the interactive setup wizard.
  *
- * Accepts optional overrides for the readline interface and config file path
- * (used by tests). When not provided, creates a real stdin/stdout rl and
- * writes to the default CONFIG_PATH.
+ * Accepts optional overrides for the readline interface, config file path,
+ * and pre-discovered plugin options (all used by tests). When not provided,
+ * creates a real stdin/stdout rl, writes to the default CONFIG_PATH, and
+ * discovers plugins from the default plugins directory.
  */
 export async function runSetupWizard(options?: {
   rl?: readline.Interface;
   configPath?: string;
+  pluginOptions?: PromptOption[];
 }): Promise<void> {
+  // Discover plugins BEFORE creating readline to avoid async gaps
+  // between readline questions (which can drain mock streams in tests).
+  const pluginOptions = options?.pluginOptions ?? await discoverPluginOptions();
+
   const ownRl = !options?.rl;
   const rl =
     options?.rl ??
@@ -50,7 +91,7 @@ export async function runSetupWizard(options?: {
   const configPath = options?.configPath ?? CONFIG_PATH;
 
   try {
-    await runWizardSteps(rl, configPath);
+    await runWizardSteps(rl, configPath, pluginOptions);
   } finally {
     if (ownRl) {
       rl.close();
@@ -65,6 +106,7 @@ export async function runSetupWizard(options?: {
 async function runWizardSteps(
   rl: readline.Interface,
   configPath: string,
+  pluginOptions: PromptOption[],
 ): Promise<void> {
   // Step 1: Welcome banner
   printBanner(rl);
@@ -92,11 +134,14 @@ async function runWizardSteps(
     }
   }
 
-  // Step 5: Services
+  // Step 5: Services (built-in + discovered plugins, deduped)
+  const builtinIds = new Set(SERVICE_OPTIONS.map((o) => o.value));
+  const safePluginOptions = pluginOptions.filter((o) => !builtinIds.has(o.value));
+  const allServiceOptions = [...SERVICE_OPTIONS, ...safePluginOptions];
   const selectedServices = await multiSelect(
     rl,
     "Enable M365 services:",
-    SERVICE_OPTIONS,
+    allServiceOptions,
   );
 
   // Step 6: Tool profile
@@ -112,12 +157,16 @@ async function runWizardSteps(
   const gatewayPortStr = await prompt(rl, "Gateway port:", "4100");
   const gatewayPort = parseInt(gatewayPortStr, 10) || 4100;
 
+  // Compute full service ID list (builtins + any discovered plugins)
+  const allServiceIds = allServiceOptions.map((o) => o.value);
+
   // Step 10: Review
   printReview(rl, {
     clientId,
     tenantId,
     apiKey,
     selectedServices,
+    allServiceIds,
     toolProfile,
     agentName,
     agentEmoji,
@@ -138,6 +187,7 @@ async function runWizardSteps(
     tenantId,
     apiKey,
     selectedServices,
+    allServiceIds,
     toolProfile,
     agentName,
     agentEmoji,
@@ -165,6 +215,7 @@ type WizardAnswers = {
   tenantId: string;
   apiKey: string;
   selectedServices: string[];
+  allServiceIds: string[];
   toolProfile: string;
   agentName: string;
   agentEmoji: string;
@@ -209,7 +260,7 @@ function buildMinimalConfig(answers: WizardAnswers): OpenClippyConfig {
   }
 
   // Services — only include if selection differs from defaults
-  const servicesConfig = buildServicesConfig(answers.selectedServices);
+  const servicesConfig = buildServicesConfig(answers.selectedServices, answers.allServiceIds);
   if (servicesConfig) {
     config.services = servicesConfig;
   }
@@ -247,15 +298,21 @@ function buildMinimalConfig(answers: WizardAnswers): OpenClippyConfig {
 /**
  * Compare the selected services against defaults.
  * Returns undefined if selections match defaults exactly.
+ *
+ * @param selectedServices - Service IDs the user selected
+ * @param allServiceIds - All service IDs (builtins + discovered plugins)
  */
-function buildServicesConfig(selectedServices: string[]): ServicesConfig | undefined {
+function buildServicesConfig(
+  selectedServices: string[],
+  allServiceIds: string[],
+): ServicesConfig | undefined {
   const defaults = DEFAULT_CONFIG.services!;
   const selectedSet = new Set(selectedServices);
   let hasDiff = false;
 
   const config: ServicesConfig = {};
 
-  for (const serviceId of ALL_SERVICE_IDS) {
+  for (const serviceId of allServiceIds) {
     const isSelected = selectedSet.has(serviceId);
     const defaultEnabled = defaults[serviceId as keyof typeof defaults]?.enabled ?? false;
 

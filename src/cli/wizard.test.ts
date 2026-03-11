@@ -1,12 +1,12 @@
 import { describe, it, expect, afterEach } from "vitest";
 import { Readable, Writable } from "node:stream";
 import * as readline from "node:readline";
-import { readFile, rm, mkdtemp } from "node:fs/promises";
+import { readFile, rm, mkdtemp, mkdir, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { parse as parseYaml } from "yaml";
-import { runSetupWizard } from "./wizard.js";
+import { runSetupWizard, discoverPluginOptions } from "./wizard.js";
 
 /**
  * Creates a mock readline.Interface that feeds answers on demand.
@@ -88,7 +88,7 @@ describe("runSetupWizard", () => {
       "y",             // save confirm
     );
 
-    await runSetupWizard({ rl, configPath });
+    await runSetupWizard({ rl, configPath, pluginOptions: [] });
 
     expect(existsSync(configPath)).toBe(true);
     const config = await readSavedConfig(configPath);
@@ -123,7 +123,7 @@ describe("runSetupWizard", () => {
       "y",             // save confirm
     );
 
-    await runSetupWizard({ rl, configPath });
+    await runSetupWizard({ rl, configPath, pluginOptions: [] });
 
     expect(existsSync(configPath)).toBe(true);
     const config = await readSavedConfig(configPath);
@@ -153,7 +153,7 @@ describe("runSetupWizard", () => {
       "y",             // save confirm
     );
 
-    await runSetupWizard({ rl, configPath });
+    await runSetupWizard({ rl, configPath, pluginOptions: [] });
 
     expect(existsSync(configPath)).toBe(true);
     const config = await readSavedConfig(configPath);
@@ -193,7 +193,7 @@ describe("runSetupWizard", () => {
       "y",             // save confirm
     );
 
-    await runSetupWizard({ rl, configPath });
+    await runSetupWizard({ rl, configPath, pluginOptions: [] });
 
     expect(existsSync(configPath)).toBe(true);
     const config = await readSavedConfig(configPath);
@@ -221,7 +221,7 @@ describe("runSetupWizard", () => {
       "y",             // save confirm
     );
 
-    await runSetupWizard({ rl, configPath });
+    await runSetupWizard({ rl, configPath, pluginOptions: [] });
 
     expect(existsSync(configPath)).toBe(true);
     const config = await readSavedConfig(configPath);
@@ -247,7 +247,7 @@ describe("runSetupWizard", () => {
       "n",             // save confirm — NO
     );
 
-    await runSetupWizard({ rl, configPath });
+    await runSetupWizard({ rl, configPath, pluginOptions: [] });
 
     // File should NOT exist
     expect(existsSync(configPath)).toBe(false);
@@ -268,7 +268,7 @@ describe("runSetupWizard", () => {
       "y",             // save confirm
     );
 
-    await runSetupWizard({ rl, configPath });
+    await runSetupWizard({ rl, configPath, pluginOptions: [] });
 
     expect(existsSync(configPath)).toBe(true);
     const config = await readSavedConfig(configPath);
@@ -279,5 +279,226 @@ describe("runSetupWizard", () => {
     expect(config).toHaveProperty("agent");
     const agent = config.agent as Record<string, unknown>;
     expect(agent.toolProfile).toBe("full");
+  });
+
+  it("wizard with plugin options saves plugin serviceId in config", async () => {
+    const configPath = await makeTempConfigPath();
+
+    const pluginOptions = [
+      { label: "Jira (plugin)", value: "jira", description: "Jira issues", selected: false },
+    ];
+
+    // Select all defaults + toggle jira plugin on (option 11 = jira, the 11th item)
+    const rl = createMockRl(
+      "",              // clientId — default
+      "",              // tenantId — default
+      "sk-test-key",   // apiKey
+      "1,2,3,4,9,10,11", // services — defaults (1-4,9,10) + jira (11)
+      "2",             // toolProfile — standard
+      "",              // agentName — default
+      "",              // agentEmoji — default
+      "",              // gatewayPort — default
+      "y",             // save confirm
+    );
+
+    await runSetupWizard({ rl, configPath, pluginOptions });
+
+    expect(existsSync(configPath)).toBe(true);
+    const config = await readSavedConfig(configPath);
+
+    // Services section should exist because plugin jira differs from defaults
+    expect(config).toHaveProperty("services");
+    const services = config.services as Record<string, Record<string, unknown>>;
+
+    // Plugin service should be enabled
+    expect(services.jira).toBeDefined();
+    expect(services.jira.enabled).toBe(true);
+
+    // Built-in defaults should also be present
+    expect(services.mail.enabled).toBe(true);
+    expect(services.calendar.enabled).toBe(true);
+  });
+
+  it("wizard deduplicates plugin serviceIds that collide with builtins", async () => {
+    const configPath = await makeTempConfigPath();
+
+    // Plugin with serviceId "mail" collides with builtin
+    const pluginOptions = [
+      { label: "Mail Enhanced (plugin)", value: "mail", description: "Enhanced mail", selected: false },
+      { label: "Jira (plugin)", value: "jira", description: "Jira issues", selected: false },
+    ];
+
+    // Only 11 options should appear (10 builtins + 1 jira; mail plugin filtered out)
+    // Select defaults + jira (option 11) to verify jira was included but mail plugin was not
+    const rl = createMockRl(
+      "",              // clientId — default
+      "",              // tenantId — default
+      "sk-test-key",   // apiKey
+      "1,2,3,4,9,10,11", // services — defaults (1-4,9,10) + jira (11)
+      "2",             // toolProfile — standard
+      "",              // agentName — default
+      "",              // agentEmoji — default
+      "",              // gatewayPort — default
+      "y",             // save confirm
+    );
+
+    await runSetupWizard({ rl, configPath, pluginOptions });
+
+    expect(existsSync(configPath)).toBe(true);
+    const config = await readSavedConfig(configPath);
+
+    // Services section should exist because jira (enabled) differs from default (no entry)
+    expect(config).toHaveProperty("services");
+    const services = config.services as Record<string, Record<string, unknown>>;
+
+    // Jira plugin should be enabled (proves it wasn't filtered as a collision)
+    expect(services.jira).toBeDefined();
+    expect(services.jira.enabled).toBe(true);
+
+    // Mail should be the builtin (enabled), not duplicated
+    expect(services.mail.enabled).toBe(true);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// discoverPluginOptions tests
+// ---------------------------------------------------------------------------
+
+/** Helper: create a valid plugin manifest in a temp dir. */
+async function createMockPlugin(
+  pluginsDir: string,
+  pluginName: string,
+  manifest: Record<string, unknown>,
+): Promise<void> {
+  const pluginDir = join(pluginsDir, pluginName);
+  await mkdir(pluginDir, { recursive: true });
+  await writeFile(
+    join(pluginDir, "manifest.json"),
+    JSON.stringify(manifest),
+  );
+}
+
+describe("discoverPluginOptions", () => {
+  it("returns empty array when plugins dir does not exist", async () => {
+    const nonexistent = join(tmpdir(), `openclippy-no-exist-${Date.now()}`);
+    const options = await discoverPluginOptions(nonexistent);
+    expect(options).toEqual([]);
+  });
+
+  it("returns empty array when plugins dir is empty", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "openclippy-wizard-plugin-"));
+    tempDirs.push(dir);
+    const options = await discoverPluginOptions(dir);
+    expect(options).toEqual([]);
+  });
+
+  it("returns PromptOption[] from valid plugin manifests", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "openclippy-wizard-plugin-"));
+    tempDirs.push(dir);
+
+    await createMockPlugin(dir, "jira-plugin", {
+      name: "Jira Integration",
+      version: "1.0.0",
+      description: "Manage Jira issues",
+      serviceId: "jira",
+      entry: "index.js",
+    });
+
+    const options = await discoverPluginOptions(dir);
+
+    expect(options).toHaveLength(1);
+    expect(options[0].label).toBe("Jira Integration (plugin)");
+    expect(options[0].value).toBe("jira");
+    expect(options[0].description).toBe("Manage Jira issues");
+  });
+
+  it("sets selected: false for all plugin options", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "openclippy-wizard-plugin-"));
+    tempDirs.push(dir);
+
+    await createMockPlugin(dir, "slack-plugin", {
+      name: "Slack",
+      version: "1.0.0",
+      description: "Slack messages",
+      serviceId: "slack",
+      entry: "index.js",
+    });
+
+    const options = await discoverPluginOptions(dir);
+
+    expect(options).toHaveLength(1);
+    expect(options[0].selected).toBe(false);
+  });
+
+  it("skips plugins with invalid manifests without crashing", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "openclippy-wizard-plugin-"));
+    tempDirs.push(dir);
+
+    // Valid plugin
+    await createMockPlugin(dir, "good-plugin", {
+      name: "Good Plugin",
+      version: "1.0.0",
+      description: "Works great",
+      serviceId: "good",
+      entry: "index.js",
+    });
+
+    // Invalid plugin (missing required fields)
+    await createMockPlugin(dir, "bad-plugin", {
+      name: "Bad Plugin",
+      // missing serviceId, entry, etc.
+    });
+
+    const options = await discoverPluginOptions(dir);
+
+    // Should only include the valid plugin, skipping the bad one
+    expect(options).toHaveLength(1);
+    expect(options[0].value).toBe("good");
+  });
+
+  it("discovers multiple plugins", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "openclippy-wizard-plugin-"));
+    tempDirs.push(dir);
+
+    await createMockPlugin(dir, "plugin-a", {
+      name: "Plugin A",
+      version: "1.0.0",
+      description: "First plugin",
+      serviceId: "plugin-a",
+      entry: "index.js",
+    });
+
+    await createMockPlugin(dir, "plugin-b", {
+      name: "Plugin B",
+      version: "2.0.0",
+      description: "Second plugin",
+      serviceId: "plugin-b",
+      entry: "index.js",
+    });
+
+    const options = await discoverPluginOptions(dir);
+
+    expect(options).toHaveLength(2);
+    const values = options.map((o) => o.value).sort();
+    expect(values).toEqual(["plugin-a", "plugin-b"]);
+  });
+
+  it("uses manifest name as label with (plugin) suffix", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "openclippy-wizard-plugin-"));
+    tempDirs.push(dir);
+
+    await createMockPlugin(dir, "my-svc", {
+      name: "My Custom Service",
+      version: "1.0.0",
+      description: "Does custom things",
+      serviceId: "my-svc",
+      entry: "index.js",
+    });
+
+    const options = await discoverPluginOptions(dir);
+
+    expect(options[0].label).toBe("My Custom Service (plugin)");
+    expect(options[0].description).toBe("Does custom things");
+    expect(options[0].value).toBe("my-svc");
   });
 });

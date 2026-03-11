@@ -1,14 +1,39 @@
-# Phase 4.1 — Plugin System
+# F.4 — Wizard Plugin Integration
 
-## Context
+## Goal
+Show discovered plugins in the wizard's service selection step so users can enable/disable plugin services during setup.
 
-OpenClippy has 10 built-in M365 service modules, each implementing the `ServiceModule` interface. Currently, all services are hardcoded imports in `ask.ts` and `tui.ts`. The `ServiceId` type is a fixed union. The `ScopeManager` has a hardcoded scope map. This means adding a new service requires modifying core files — no third-party extensibility.
+## Current State
+- 712 tests passing, build clean ✅
+- F.4 implementation complete
 
-Phase 4.1 adds a plugin system that lets external `ServiceModule` implementations be loaded dynamically from `~/.openclippy/plugins/`, configured via YAML, and registered at runtime — zero changes to core files required.
+## Implementation Plan (TDD) — COMPLETED
 
-**Key constraint:** The existing `ServiceModule` interface is already well-designed for plugins. We avoid changing it. The work is in the *loading*, *registration*, and *configuration* layers, not the plugin contract itself.
+### Step 1: Write tests for `discoverPluginOptions` ✅
+- [x] Returns empty array when no plugins dir exists
+- [x] Returns PromptOption[] from valid manifests
+- [x] Skips plugins with invalid manifests (no crash)
+- [x] Sets `selected: false` for all plugin options
+- [x] Uses manifest name as label with "(plugin)" suffix, description as description
+- [x] Uses manifest serviceId as value
 
-**No new npm dependencies.** Plugin loading uses Node.js `import()`, config uses existing YAML system, validation uses runtime checks.
+### Step 2: Create `discoverPluginOptions` in wizard.ts ✅
+- [x] Import `scanPluginDirs` and `readManifest`
+- [x] Create `async function discoverPluginOptions(pluginsDir?: string): Promise<PromptOption[]>`
+- [x] Scan for plugins, read each manifest, build PromptOption
+- [x] Catch errors per-plugin gracefully
+
+### Step 3: Integrate into wizard flow ✅
+- [x] Before Step 5 (multiSelect), call `discoverPluginOptions()`
+- [x] Concat plugin options onto SERVICE_OPTIONS for multiSelect
+- [x] Pass combined service IDs to `buildServicesConfig`
+- [x] Add collision guard (dedup plugin serviceIds shadowing builtins)
+- [x] Discover plugins BEFORE readline to avoid mock stream timing issues
+
+### Step 4: Verify ✅
+- [x] `pnpm test` — 712 tests pass (703 original + 9 new)
+- [x] `pnpm build` — clean build
+- [x] QA review — dead code removed, collision guard added, integration tests added
 
 ---
 
