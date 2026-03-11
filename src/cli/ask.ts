@@ -9,7 +9,7 @@ import { buildSystemPrompt } from "../agents/prompt-builder.js";
 import { AgentSession } from "../agents/session.js";
 import { runAgent } from "../agents/runtime.js";
 import { PluginRegistry } from "../plugins/registry.js";
-import type { ServiceId } from "../config/types.services.js";
+import { getEnabledServiceIds } from "../config/helpers.js";
 import type { ToolProfileId } from "../config/types.tools.js";
 
 // Service module imports — Phase 1
@@ -25,14 +25,6 @@ import { presenceModule } from "../services/presence/module.js";
 import { plannerModule } from "../services/planner/module.js";
 import { onenoteModule } from "../services/onenote/module.js";
 import { sharepointModule } from "../services/sharepoint/module.js";
-
-/** Get the list of enabled service IDs from config */
-function getEnabledServiceIds(config: { services?: Record<string, { enabled?: boolean }> }): ServiceId[] {
-  const services = config.services ?? {};
-  return Object.entries(services)
-    .filter(([, svc]) => svc?.enabled)
-    .map(([id]) => id as ServiceId);
-}
 
 export async function askCommand(message: string): Promise<void> {
   try {

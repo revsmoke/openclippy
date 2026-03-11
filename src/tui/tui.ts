@@ -10,7 +10,7 @@ import { buildSystemPrompt } from "../agents/prompt-builder.js";
 import { AgentSession } from "../agents/session.js";
 import { runAgent } from "../agents/runtime.js";
 import { PluginRegistry } from "../plugins/registry.js";
-import type { ServiceId } from "../config/types.services.js";
+import { getEnabledServiceIds } from "../config/helpers.js";
 import type { ToolProfileId } from "../config/types.tools.js";
 import type { AgentTool, ToolContext } from "../services/types.js";
 import type { ModelConfig } from "../agents/model-config.js";
@@ -72,13 +72,6 @@ export function formatResponse(
   identity: { name: string; emoji: string },
 ): string {
   return `\n${identity.emoji} ${response}\n`;
-}
-
-function getEnabledServiceIds(config: { services?: Record<string, { enabled?: boolean }> }): ServiceId[] {
-  const services = config.services ?? {};
-  return Object.entries(services)
-    .filter(([, svc]) => svc?.enabled)
-    .map(([id]) => id as ServiceId);
 }
 
 /**

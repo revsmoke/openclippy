@@ -2,15 +2,7 @@ import { loadConfig } from "../config/config.js";
 import { resolveAzureCredentials } from "../auth/credentials.js";
 import { MSALClient } from "../auth/msal-client.js";
 import { ScopeManager } from "../auth/scope-manager.js";
-import type { ServiceId } from "../config/types.services.js";
-
-/** Get the list of enabled service IDs from config */
-function getEnabledServiceIds(config: { services?: Record<string, { enabled?: boolean }> }): ServiceId[] {
-  const services = config.services ?? {};
-  return Object.entries(services)
-    .filter(([, svc]) => svc?.enabled)
-    .map(([id]) => id as ServiceId);
-}
+import { getEnabledServiceIds } from "../config/helpers.js";
 
 export async function loginCommand(): Promise<void> {
   try {
