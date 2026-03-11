@@ -440,4 +440,15 @@ describe("Gateway token renewal", () => {
     await gw.stop();
     vi.useRealTimers();
   });
+
+  it("does not contain hardcoded Azure credentials in source", async () => {
+    const fs = await import("node:fs/promises");
+    const path = await import("node:path");
+    const source = await fs.readFile(
+      path.join(import.meta.dirname, "server.ts"),
+      "utf-8",
+    );
+    expect(source).not.toContain("bfe7dd6e-ed60-4bf4-8396-801a8eada469");
+    expect(source).not.toContain("ddd9f933-04a5-43f0-8673-5933da46cdcb");
+  });
 });

@@ -13,6 +13,7 @@ import { WsHandler } from "./server-ws.js";
 import { runAgent } from "../agents/runtime.js";
 import { AgentSession } from "../agents/session.js";
 import type { GatewayConfig } from "../config/types.gateway.js";
+import { resolveAzureCredentials } from "../auth/credentials.js";
 
 const TOKEN_RENEWAL_INTERVAL_MS = 30 * 60 * 1000; // 30 minutes
 
@@ -142,10 +143,8 @@ export class Gateway {
     try {
       // Dynamic import to avoid hard dependency when mocking
       const { MSALClient } = await import("../auth/msal-client.js");
-      const client = new MSALClient({
-        clientId: "bfe7dd6e-ed60-4bf4-8396-801a8eada469",
-        tenantId: "ddd9f933-04a5-43f0-8673-5933da46cdcb",
-      });
+      const creds = resolveAzureCredentials();
+      const client = new MSALClient(creds);
       await client.acquireToken(["https://graph.microsoft.com/.default"]);
     } catch {
       // Token renewal failure is non-fatal — log and continue
