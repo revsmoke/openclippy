@@ -8,3 +8,7 @@ coverage/
 PLAN.md
 CURRENT_PLAN.md
 agent_plans/
+context_history/
+openclippy_microsoft_azure.md
+src/auth/*.json
+test-ws.mjs

@@ -27,7 +27,13 @@ function redactConfig(obj: Record<string, unknown>): Record<string, unknown> {
   return result;
 }
 
-export async function configCommand(opts?: { show?: boolean }): Promise<void> {
+export async function configCommand(opts?: { show?: boolean; setup?: boolean }): Promise<void> {
+  if (opts?.setup) {
+    const { runSetupWizard } = await import("./wizard.js");
+    await runSetupWizard();
+    return;
+  }
+
   try {
     // Default behavior: show config (same as --show)
     const config = await loadConfig();

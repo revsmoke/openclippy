@@ -52,7 +52,8 @@ export function createProgram(): Command {
     .command("config")
     .description("Show or edit configuration")
     .option("--show", "Show current configuration")
-    .action(async (opts: { show?: boolean }) => {
+    .option("--setup", "Run the configuration wizard")
+    .action(async (opts: { show?: boolean; setup?: boolean }) => {
       const { configCommand } = await import("./config.js");
       await configCommand(opts);
     });
