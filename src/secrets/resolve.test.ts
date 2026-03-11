@@ -1,10 +1,12 @@
-import { describe, it, expect, afterEach } from "vitest";
+import { describe, it, expect } from "vitest";
 import { resolveSecret } from "./resolve.js";
-import { writeFile, mkdir, rm } from "node:fs/promises";
+import { writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { tmpdir } from "node:os";
+import { useTempDir } from "../test-utils/temp-dir.js";
 
 describe("resolveSecret", () => {
+  const tmp = useTempDir("secret");
+
   it("returns undefined for undefined input", async () => {
     expect(await resolveSecret(undefined)).toBeUndefined();
   });
@@ -26,15 +28,12 @@ describe("resolveSecret", () => {
   });
 
   it("resolves file source", async () => {
-    const tmpDir = join(tmpdir(), "openclippy-test-secret");
-    const secretFile = join(tmpDir, "secret.txt");
-    await mkdir(tmpDir, { recursive: true });
+    const dir = await tmp.create();
+    const secretFile = join(dir, "secret.txt");
     await writeFile(secretFile, "file-secret\n", "utf-8");
 
     const result = await resolveSecret({ source: "file", path: secretFile });
     expect(result).toBe("file-secret");
-
-    await rm(tmpDir, { recursive: true, force: true });
   });
 
   it("resolves exec source", async () => {

@@ -1,12 +1,12 @@
-import { describe, it, expect, afterEach } from "vitest";
+import { describe, it, expect } from "vitest";
 import { Readable, Writable } from "node:stream";
 import * as readline from "node:readline";
-import { readFile, rm, mkdtemp, mkdir, writeFile } from "node:fs/promises";
+import { readFile, mkdir, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
-import { tmpdir } from "node:os";
 import { parse as parseYaml } from "yaml";
 import { runSetupWizard, discoverPluginOptions } from "./wizard.js";
+import { useTempDir } from "../test-utils/temp-dir.js";
 
 /**
  * Creates a mock readline.Interface that feeds answers on demand.
@@ -42,21 +42,12 @@ async function readSavedConfig(configPath: string): Promise<Record<string, unkno
   return parseYaml(raw) as Record<string, unknown>;
 }
 
-// Track temp dirs for cleanup
-let tempDirs: string[] = [];
+const tmp = useTempDir("wizard-test");
 
 async function makeTempConfigPath(): Promise<string> {
-  const dir = await mkdtemp(join(tmpdir(), "openclippy-wizard-test-"));
-  tempDirs.push(dir);
+  const dir = await tmp.create();
   return join(dir, "config.yaml");
 }
-
-afterEach(async () => {
-  for (const dir of tempDirs) {
-    await rm(dir, { recursive: true, force: true });
-  }
-  tempDirs = [];
-});
 
 /**
  * Answer sequence for wizard steps:
@@ -380,21 +371,20 @@ async function createMockPlugin(
 
 describe("discoverPluginOptions", () => {
   it("returns empty array when plugins dir does not exist", async () => {
-    const nonexistent = join(tmpdir(), `openclippy-no-exist-${Date.now()}`);
+    const base = await tmp.create();
+    const nonexistent = join(base, `openclippy-no-exist-${Date.now()}`);
     const options = await discoverPluginOptions(nonexistent);
     expect(options).toEqual([]);
   });
 
   it("returns empty array when plugins dir is empty", async () => {
-    const dir = await mkdtemp(join(tmpdir(), "openclippy-wizard-plugin-"));
-    tempDirs.push(dir);
+    const dir = await tmp.create();
     const options = await discoverPluginOptions(dir);
     expect(options).toEqual([]);
   });
 
   it("returns PromptOption[] from valid plugin manifests", async () => {
-    const dir = await mkdtemp(join(tmpdir(), "openclippy-wizard-plugin-"));
-    tempDirs.push(dir);
+    const dir = await tmp.create();
 
     await createMockPlugin(dir, "jira-plugin", {
       name: "Jira Integration",
@@ -413,8 +403,7 @@ describe("discoverPluginOptions", () => {
   });
 
   it("sets selected: false for all plugin options", async () => {
-    const dir = await mkdtemp(join(tmpdir(), "openclippy-wizard-plugin-"));
-    tempDirs.push(dir);
+    const dir = await tmp.create();
 
     await createMockPlugin(dir, "slack-plugin", {
       name: "Slack",
@@ -431,8 +420,7 @@ describe("discoverPluginOptions", () => {
   });
 
   it("skips plugins with invalid manifests without crashing", async () => {
-    const dir = await mkdtemp(join(tmpdir(), "openclippy-wizard-plugin-"));
-    tempDirs.push(dir);
+    const dir = await tmp.create();
 
     // Valid plugin
     await createMockPlugin(dir, "good-plugin", {
@@ -457,8 +445,7 @@ describe("discoverPluginOptions", () => {
   });
 
   it("discovers multiple plugins", async () => {
-    const dir = await mkdtemp(join(tmpdir(), "openclippy-wizard-plugin-"));
-    tempDirs.push(dir);
+    const dir = await tmp.create();
 
     await createMockPlugin(dir, "plugin-a", {
       name: "Plugin A",
@@ -484,8 +471,7 @@ describe("discoverPluginOptions", () => {
   });
 
   it("uses manifest name as label with (plugin) suffix", async () => {
-    const dir = await mkdtemp(join(tmpdir(), "openclippy-wizard-plugin-"));
-    tempDirs.push(dir);
+    const dir = await tmp.create();
 
     await createMockPlugin(dir, "my-svc", {
       name: "My Custom Service",

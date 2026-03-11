@@ -1,19 +1,8 @@
-import { describe, it, expect, afterEach } from "vitest";
-import { mkdir, writeFile, rm } from "node:fs/promises";
+import { describe, it, expect } from "vitest";
+import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { tmpdir } from "node:os";
-import { randomUUID } from "node:crypto";
 import { scanPluginDirs } from "./scanner.js";
-
-/**
- * Helper: create a unique temp directory for each test.
- * Returns the absolute path; caller is responsible for cleanup.
- */
-async function makeTempDir(): Promise<string> {
-  const dir = join(tmpdir(), `openclippy-test-${randomUUID()}`);
-  await mkdir(dir, { recursive: true });
-  return dir;
-}
+import { useTempDir } from "../test-utils/temp-dir.js";
 
 /** Minimal valid manifest JSON content */
 const MANIFEST_JSON = JSON.stringify({
@@ -28,32 +17,24 @@ const MANIFEST_JSON = JSON.stringify({
 // scanPluginDirs
 // ---------------------------------------------------------------------------
 describe("scanPluginDirs", () => {
-  const cleanupDirs: string[] = [];
-
-  afterEach(async () => {
-    await Promise.all(
-      cleanupDirs.map((d) => rm(d, { recursive: true, force: true })),
-    );
-    cleanupDirs.length = 0;
-  });
+  const tmp = useTempDir("scanner");
 
   it("returns empty array when plugins dir doesn't exist", async () => {
-    const missing = join(tmpdir(), `nonexistent-${randomUUID()}`);
+    const base = await tmp.create();
+    const missing = join(base, "nonexistent");
     const result = await scanPluginDirs({ pluginsDir: missing });
     expect(result).toEqual([]);
   });
 
   it("returns empty array when plugins dir is empty", async () => {
-    const dir = await makeTempDir();
-    cleanupDirs.push(dir);
+    const dir = await tmp.create();
 
     const result = await scanPluginDirs({ pluginsDir: dir });
     expect(result).toEqual([]);
   });
 
   it("discovers directories with manifest.json inside them", async () => {
-    const dir = await makeTempDir();
-    cleanupDirs.push(dir);
+    const dir = await tmp.create();
 
     // Create two valid plugin dirs
     const pluginA = join(dir, "plugin-a");
@@ -70,8 +51,7 @@ describe("scanPluginDirs", () => {
   });
 
   it("skips directories without manifest.json", async () => {
-    const dir = await makeTempDir();
-    cleanupDirs.push(dir);
+    const dir = await tmp.create();
 
     // One valid, one missing manifest
     const valid = join(dir, "valid-plugin");
@@ -86,8 +66,7 @@ describe("scanPluginDirs", () => {
   });
 
   it("skips files (non-directories) in plugins dir", async () => {
-    const dir = await makeTempDir();
-    cleanupDirs.push(dir);
+    const dir = await tmp.create();
 
     // A regular file sitting in the plugins dir
     await writeFile(join(dir, "README.md"), "not a plugin");
@@ -102,8 +81,7 @@ describe("scanPluginDirs", () => {
   });
 
   it("returns absolute paths to valid plugin directories", async () => {
-    const dir = await makeTempDir();
-    cleanupDirs.push(dir);
+    const dir = await tmp.create();
 
     const plugin = join(dir, "abs-plugin");
     await mkdir(plugin);
@@ -118,8 +96,7 @@ describe("scanPluginDirs", () => {
   });
 
   it("handles config-specified plugin paths", async () => {
-    const dir = await makeTempDir();
-    cleanupDirs.push(dir);
+    const dir = await tmp.create();
 
     // Config path points to a directory with manifest.json outside pluginsDir
     const configPlugin = join(dir, "external", "my-custom-plugin");
