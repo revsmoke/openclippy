@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
 import { builtinModules, registerBuiltinModules } from "./builtin-modules.js";
+import { BUILTIN_SERVICE_IDS } from "../config/types.services.js";
 import type { ServiceRegistry } from "./registry.js";
 
 describe("builtinModules", () => {
@@ -12,6 +13,12 @@ describe("builtinModules", () => {
     const ids = builtinModules.map((m) => m.id);
     const uniqueIds = new Set(ids);
     expect(uniqueIds.size).toBe(ids.length);
+  });
+
+  it("BUILTIN_SERVICE_IDS matches builtinModules IDs", () => {
+    const moduleIds = builtinModules.map((m) => m.id).sort();
+    const constIds = [...BUILTIN_SERVICE_IDS].sort();
+    expect(moduleIds).toEqual(constIds);
   });
 });
 
