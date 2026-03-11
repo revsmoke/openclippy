@@ -1,5 +1,6 @@
 import * as readline from "node:readline";
 import { loadConfig } from "../config/config.js";
+import { getErrorMessage } from "../services/tool-utils.js";
 import { resolveAzureCredentials } from "../auth/credentials.js";
 import { MSALClient } from "../auth/msal-client.js";
 import { ScopeManager } from "../auth/scope-manager.js";
@@ -257,8 +258,7 @@ export async function startTui(): Promise<void> {
 
       console.log(formatResponse(response, identity));
     } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      console.error(`\n${message}\n`);
+      console.error(`\n${getErrorMessage(err)}\n`);
     }
 
     rl.prompt();

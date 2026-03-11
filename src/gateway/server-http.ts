@@ -9,6 +9,7 @@
  */
 
 import type { IncomingMessage, ServerResponse } from "node:http";
+import { getErrorMessage } from "../services/tool-utils.js";
 import type {
   ErrorResponse,
   AskRequestBody,
@@ -114,8 +115,7 @@ async function handleAsk(
     const response = await deps.runAsk(askBody.message, askBody.profile);
     sendJson(res, 200, { response } satisfies AskResponseBody);
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    sendJson(res, 500, { error: message, status: 500 } satisfies ErrorResponse);
+    sendJson(res, 500, { error: getErrorMessage(err), status: 500 } satisfies ErrorResponse);
   }
 }
 

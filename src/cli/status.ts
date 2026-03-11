@@ -1,4 +1,5 @@
 import { loadConfig } from "../config/config.js";
+import { getErrorMessage } from "../services/tool-utils.js";
 import { resolveAzureCredentials } from "../auth/credentials.js";
 import { MSALClient } from "../auth/msal-client.js";
 import { ScopeManager } from "../auth/scope-manager.js";
@@ -48,8 +49,7 @@ export async function statusCommand(): Promise<void> {
     console.log(`\nAgent: ${config.agent?.model ?? "not configured"}`);
     console.log(`Tool Profile: ${config.tools?.profile ?? "standard"}`);
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    console.error(`\u274C Status check failed: ${message}`);
+    console.error(`\u274C Status check failed: ${getErrorMessage(err)}`);
     process.exitCode = 1;
   }
 }

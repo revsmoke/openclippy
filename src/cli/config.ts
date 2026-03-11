@@ -1,4 +1,5 @@
 import { loadConfig } from "../config/config.js";
+import { getErrorMessage } from "../services/tool-utils.js";
 import { CONFIG_PATH } from "../config/paths.js";
 
 /** Redact sensitive values (API keys, secrets) in config for display */
@@ -46,8 +47,7 @@ export async function configCommand(opts?: { show?: boolean; setup?: boolean }):
     const redacted = redactConfig(config as unknown as Record<string, unknown>);
     console.log(JSON.stringify(redacted, null, 2));
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    console.error(`\u274C Failed to load config: ${message}`);
+    console.error(`\u274C Failed to load config: ${getErrorMessage(err)}`);
     process.exitCode = 1;
   }
 }

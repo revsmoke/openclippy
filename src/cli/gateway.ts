@@ -9,6 +9,7 @@ import { writeFile, readFile, unlink, mkdir } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { STATE_DIR } from "../config/paths.js";
 import { loadConfig } from "../config/config.js";
+import { getErrorMessage } from "../services/tool-utils.js";
 import { Gateway } from "../gateway/server.js";
 
 /** Path to the PID file for the gateway daemon. */
@@ -89,8 +90,7 @@ export async function gatewayStartCommand(): Promise<void> {
     process.on("SIGINT", () => void shutdown());
     process.on("SIGTERM", () => void shutdown());
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : String(err);
-    console.error(`Failed to start gateway: ${message}`);
+    console.error(`Failed to start gateway: ${getErrorMessage(err)}`);
     process.exitCode = 1;
   }
 }
@@ -115,8 +115,7 @@ export async function gatewayStopCommand(): Promise<void> {
     await removePidFile();
     console.log(`Gateway stopped (PID ${pid}).`);
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : String(err);
-    console.error(`Failed to stop gateway: ${message}`);
+    console.error(`Failed to stop gateway: ${getErrorMessage(err)}`);
     process.exitCode = 1;
   }
 }

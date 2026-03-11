@@ -1,4 +1,5 @@
 import { loadConfig } from "../config/config.js";
+import { getErrorMessage } from "../services/tool-utils.js";
 import { ScopeManager } from "../auth/scope-manager.js";
 import type { ServiceId } from "../config/types.services.js";
 
@@ -53,8 +54,7 @@ export async function servicesCommand(): Promise<void> {
     ).length;
     console.log(`\n${enabledCount} of ${ALL_SERVICES.length} services enabled.`);
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    console.error(`\u274C Failed to list services: ${message}`);
+    console.error(`\u274C Failed to list services: ${getErrorMessage(err)}`);
     process.exitCode = 1;
   }
 }

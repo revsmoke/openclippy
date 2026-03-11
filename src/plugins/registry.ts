@@ -1,5 +1,6 @@
 import type { ServiceRegistry } from "../services/registry.js";
 import type { ScopeManager } from "../auth/scope-manager.js";
+import { getErrorMessage } from "../services/tool-utils.js";
 import { scanPluginDirs } from "./scanner.js";
 import { loadPlugin } from "./loader.js";
 import type { PluginLoadResult, PluginError, PluginsConfig } from "./types.js";
@@ -98,10 +99,9 @@ export class PluginRegistry {
         this.loaded.push(result);
         loadedIds.add(serviceId);
       } catch (err: unknown) {
-        const message = err instanceof Error ? err.message : String(err);
         this.errors.push({
           pluginPath: dir,
-          error: message,
+          error: getErrorMessage(err),
         });
       }
     }

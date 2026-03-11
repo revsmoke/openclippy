@@ -1,5 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import type { AgentTool, ToolContext, ToolResult } from "../services/types.js";
+import { getErrorMessage } from "../services/tool-utils.js";
 import type { ModelConfig } from "./model-config.js";
 import type { AgentSession } from "./session.js";
 
@@ -117,9 +118,8 @@ async function executeTool(
   try {
     return await tool.execute(toolInput, context);
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
     return {
-      content: `Error executing tool "${toolName}": ${message}`,
+      content: `Error executing tool "${toolName}": ${getErrorMessage(err)}`,
       isError: true,
     };
   }

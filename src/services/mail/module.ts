@@ -1,4 +1,5 @@
 import type { ServiceModule } from "../types.js";
+import { getErrorMessage } from "../tool-utils.js";
 import { graphRequest } from "../../graph/client.js";
 import type { GraphCollectionResponse } from "../../graph/client.js";
 import type { GraphMessage } from "./types.js";
@@ -59,7 +60,7 @@ export const mailModule: ServiceModule = {
       } catch (err) {
         return {
           ok: false,
-          error: err instanceof Error ? err.message : String(err),
+          error: getErrorMessage(err),
         };
       }
     },

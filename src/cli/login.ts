@@ -1,4 +1,5 @@
 import { loadConfig } from "../config/config.js";
+import { getErrorMessage } from "../services/tool-utils.js";
 import { resolveAzureCredentials } from "../auth/credentials.js";
 import { MSALClient } from "../auth/msal-client.js";
 import { ScopeManager } from "../auth/scope-manager.js";
@@ -46,8 +47,7 @@ export async function loginCommand(): Promise<void> {
       console.log(`  ${icon} ${svcId}${hasScopes ? "" : " (missing scopes)"}`);
     }
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    console.error(`\u274C Login failed: ${message}`);
+    console.error(`\u274C Login failed: ${getErrorMessage(err)}`);
     process.exitCode = 1;
   }
 }

@@ -1,5 +1,6 @@
 import type { ServiceId, ServicesConfig } from "../config/types.services.js";
 import type { AgentTool, ProbeResult, ServiceModule } from "./types.js";
+import { getErrorMessage } from "./tool-utils.js";
 
 /**
  * Central registry for M365 service modules.
@@ -67,9 +68,7 @@ export class ServiceRegistry {
           const result = await mod.status!.probe({ token: params.token });
           results.set(mod.id, result);
         } catch (err: unknown) {
-          const message =
-            err instanceof Error ? err.message : String(err);
-          results.set(mod.id, { ok: false, error: message });
+          results.set(mod.id, { ok: false, error: getErrorMessage(err) });
         }
       });
 

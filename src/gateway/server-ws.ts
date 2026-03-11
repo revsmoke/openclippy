@@ -9,6 +9,7 @@ import { randomUUID } from "node:crypto";
 import { WebSocketServer, type WebSocket } from "ws";
 import type { IncomingMessage } from "node:http";
 import type { Server as HttpServer } from "node:http";
+import { getErrorMessage } from "../services/tool-utils.js";
 import type {
   ClientMessage,
   ServerMessage,
@@ -125,8 +126,7 @@ export class WsHandler {
         const text = await this.deps.runAsk(msg.message, msg.profile);
         this.send(ws, { type: "response", id: msg.id, text });
       } catch (err) {
-        const error = err instanceof Error ? err.message : String(err);
-        this.send(ws, { type: "error", id: msg.id, error });
+        this.send(ws, { type: "error", id: msg.id, error: getErrorMessage(err) });
       }
       return;
     }
