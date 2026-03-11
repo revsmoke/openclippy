@@ -194,7 +194,7 @@ describe("mail_read", () => {
   it("returns error when messageId is missing", async () => {
     const result = await tool.execute({}, ctx);
     expect(result.isError).toBe(true);
-    expect(result.content).toContain("messageId is required");
+    expect(result.content).toContain("messageId");
   });
 });
 
@@ -228,7 +228,7 @@ describe("mail_search", () => {
   it("returns error when query is missing", async () => {
     const result = await tool.execute({}, ctx);
     expect(result.isError).toBe(true);
-    expect(result.content).toContain("query is required");
+    expect(result.content).toContain("query");
   });
 
   it("returns not-found message for empty results", async () => {
@@ -355,7 +355,7 @@ describe("mail_send", () => {
       ctx,
     );
     expect(result.isError).toBe(true);
-    expect(result.content).toContain("subject is required");
+    expect(result.content).toContain("subject");
   });
 
   it("returns error when body is missing", async () => {
@@ -364,7 +364,7 @@ describe("mail_send", () => {
       ctx,
     );
     expect(result.isError).toBe(true);
-    expect(result.content).toContain("body is required");
+    expect(result.content).toContain("body");
   });
 });
 
@@ -423,7 +423,7 @@ describe("mail_draft", () => {
   it("returns error when subject is missing", async () => {
     const result = await tool.execute({ body: "body" }, ctx);
     expect(result.isError).toBe(true);
-    expect(result.content).toContain("subject is required");
+    expect(result.content).toContain("subject");
   });
 });
 
@@ -460,13 +460,13 @@ describe("mail_reply", () => {
   it("returns error when messageId is missing", async () => {
     const result = await tool.execute({ comment: "Hello" }, ctx);
     expect(result.isError).toBe(true);
-    expect(result.content).toContain("messageId is required");
+    expect(result.content).toContain("messageId");
   });
 
   it("returns error when comment is missing", async () => {
     const result = await tool.execute({ messageId: "msg-1" }, ctx);
     expect(result.isError).toBe(true);
-    expect(result.content).toContain("comment is required");
+    expect(result.content).toContain("comment");
   });
 });
 
@@ -573,7 +573,7 @@ describe("mail_move", () => {
   it("returns error when destinationId is missing", async () => {
     const result = await tool.execute({ messageId: "msg-1" }, ctx);
     expect(result.isError).toBe(true);
-    expect(result.content).toContain("destinationId is required");
+    expect(result.content).toContain("destinationId");
   });
 });
 
@@ -671,7 +671,7 @@ describe("mail_delete", () => {
   it("returns error when messageId is missing", async () => {
     const result = await tool.execute({}, ctx);
     expect(result.isError).toBe(true);
-    expect(result.content).toContain("messageId is required");
+    expect(result.content).toContain("messageId");
   });
 });
 

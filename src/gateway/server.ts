@@ -146,9 +146,9 @@ export class Gateway {
       const creds = resolveAzureCredentials();
       const client = new MSALClient(creds);
       await client.acquireToken(["https://graph.microsoft.com/.default"]);
-    } catch {
+    } catch (err) {
       // Token renewal failure is non-fatal — log and continue
-      // In production, this would use a proper logger
+      console.warn("[Gateway] Token renewal failed:", err instanceof Error ? err.message : String(err));
     }
   }
 }

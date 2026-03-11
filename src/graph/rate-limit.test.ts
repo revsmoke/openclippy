@@ -32,17 +32,13 @@ const baseParams: GraphRequestParams = {
 };
 
 function make429(retryAfter?: number): GraphApiError {
-  const err = new GraphApiError(
+  return new GraphApiError(
     "/me/messages",
     429,
     JSON.stringify({ error: { code: "TooManyRequests", message: "Throttled" } }),
     "TooManyRequests",
+    retryAfter,
   );
-  // Attach retryAfter metadata for the retry handler to read
-  if (retryAfter !== undefined) {
-    (err as unknown as Record<string, unknown>).retryAfterSeconds = retryAfter;
-  }
-  return err;
 }
 
 function make503(): GraphApiError {

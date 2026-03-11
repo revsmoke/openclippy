@@ -1,5 +1,5 @@
 import type { AgentTool, ToolContext, ToolResult } from "../types.js";
-import { errorResult, formatDateTime } from "../tool-utils.js";
+import { errorResult, requireString, formatDateTime } from "../tool-utils.js";
 import { graphRequest } from "../../graph/client.js";
 import { buildODataQuery } from "../../graph/types.js";
 import type { GraphCollectionResponse } from "../../graph/client.js";
@@ -162,8 +162,8 @@ export function mailReadTool(): AgentTool {
       required: ["messageId"],
     },
     execute: async (input, context) => {
-      const messageId = input.messageId as string;
-      if (!messageId) return errorResult("messageId is required");
+      const messageId = requireString(input, "messageId");
+      if (typeof messageId !== "string") return messageId;
 
       const msg = await graphRequest<GraphMessage>({
         token: context.token,
@@ -222,8 +222,8 @@ export function mailSearchTool(): AgentTool {
       required: ["query"],
     },
     execute: async (input, context) => {
-      const query = input.query as string;
-      if (!query) return errorResult("query is required");
+      const query = requireString(input, "query");
+      if (typeof query !== "string") return query;
 
       const top = Math.min(Math.max(Number(input.top) || 10, 1), 25);
 
@@ -300,11 +300,11 @@ export function mailSendTool(): AgentTool {
         return errorResult("At least one recipient (to) is required");
       }
 
-      const subject = input.subject as string;
-      if (!subject) return errorResult("subject is required");
+      const subject = requireString(input, "subject");
+      if (typeof subject !== "string") return subject;
 
-      const body = input.body as string;
-      if (!body) return errorResult("body is required");
+      const body = requireString(input, "body");
+      if (typeof body !== "string") return body;
 
       const contentType =
         (input.contentType as "text" | "html") || "text";
@@ -376,11 +376,11 @@ export function mailDraftTool(): AgentTool {
       required: ["subject", "body"],
     },
     execute: async (input, context) => {
-      const subject = input.subject as string;
-      if (!subject) return errorResult("subject is required");
+      const subject = requireString(input, "subject");
+      if (typeof subject !== "string") return subject;
 
-      const body = input.body as string;
-      if (!body) return errorResult("body is required");
+      const body = requireString(input, "body");
+      if (typeof body !== "string") return body;
 
       const contentType =
         (input.contentType as "text" | "html") || "text";
@@ -434,11 +434,11 @@ export function mailReplyTool(): AgentTool {
       required: ["messageId", "comment"],
     },
     execute: async (input, context) => {
-      const messageId = input.messageId as string;
-      if (!messageId) return errorResult("messageId is required");
+      const messageId = requireString(input, "messageId");
+      if (typeof messageId !== "string") return messageId;
 
-      const comment = input.comment as string;
-      if (!comment) return errorResult("comment is required");
+      const comment = requireString(input, "comment");
+      if (typeof comment !== "string") return comment;
 
       const payload: ReplyPayload = { comment };
 
@@ -482,8 +482,8 @@ export function mailForwardTool(): AgentTool {
       required: ["messageId", "to"],
     },
     execute: async (input, context) => {
-      const messageId = input.messageId as string;
-      if (!messageId) return errorResult("messageId is required");
+      const messageId = requireString(input, "messageId");
+      if (typeof messageId !== "string") return messageId;
 
       const toRecipients = parseRecipients(input.to);
       if (!toRecipients || toRecipients.length === 0) {
@@ -537,11 +537,11 @@ export function mailMoveTool(): AgentTool {
       required: ["messageId", "destinationId"],
     },
     execute: async (input, context) => {
-      const messageId = input.messageId as string;
-      if (!messageId) return errorResult("messageId is required");
+      const messageId = requireString(input, "messageId");
+      if (typeof messageId !== "string") return messageId;
 
-      const destinationId = input.destinationId as string;
-      if (!destinationId) return errorResult("destinationId is required");
+      const destinationId = requireString(input, "destinationId");
+      if (typeof destinationId !== "string") return destinationId;
 
       const payload: MovePayload = { destinationId };
 
@@ -583,8 +583,8 @@ export function mailFlagTool(): AgentTool {
       required: ["messageId"],
     },
     execute: async (input, context) => {
-      const messageId = input.messageId as string;
-      if (!messageId) return errorResult("messageId is required");
+      const messageId = requireString(input, "messageId");
+      if (typeof messageId !== "string") return messageId;
 
       const flagged = input.flagged !== false; // default true
       const flagStatus = flagged ? "flagged" : "notFlagged";
@@ -623,8 +623,8 @@ export function mailDeleteTool(): AgentTool {
       required: ["messageId"],
     },
     execute: async (input, context) => {
-      const messageId = input.messageId as string;
-      if (!messageId) return errorResult("messageId is required");
+      const messageId = requireString(input, "messageId");
+      if (typeof messageId !== "string") return messageId;
 
       await graphRequest<void>({
         token: context.token,
