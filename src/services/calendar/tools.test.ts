@@ -9,8 +9,8 @@ import {
   calendarDeclineTool,
   calendarFreebusyTool,
 } from "./tools.js";
-import type { ToolContext } from "../types.js";
 import type { GraphEvent, GraphGetScheduleResponse } from "./types.js";
+import { createToolContext } from "../../test-utils/graph-mock.js";
 
 // Mock the graph client module
 vi.mock("../../graph/client.js", () => ({
@@ -23,11 +23,10 @@ import { graphRequest, graphPaginate } from "../../graph/client.js";
 const mockGraphRequest = vi.mocked(graphRequest);
 const mockGraphPaginate = vi.mocked(graphPaginate);
 
-const ctx: ToolContext = {
+const ctx = createToolContext({
   token: "test-token-abc",
   userId: "user@example.com",
-  timezone: "America/New_York",
-};
+});
 
 const sampleEvent: GraphEvent = {
   id: "evt-001",

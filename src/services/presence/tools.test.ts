@@ -1,11 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import type { ToolContext } from "../types.js";
 import type { Presence } from "./types.js";
 import {
   presenceReadTool,
   presenceSetTool,
   presenceClearTool,
 } from "./tools.js";
+import { createToolContext } from "../../test-utils/graph-mock.js";
 
 // ---------------------------------------------------------------------------
 // Mock graphRequest
@@ -21,10 +21,7 @@ vi.mock("../../graph/client.js", () => ({
 // Shared context
 // ---------------------------------------------------------------------------
 
-const ctx: ToolContext = {
-  token: "test-token",
-  timezone: "America/New_York",
-};
+const ctx = createToolContext();
 
 // ---------------------------------------------------------------------------
 // Fixtures

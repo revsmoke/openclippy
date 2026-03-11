@@ -13,8 +13,8 @@ import {
   mailFoldersTool,
 } from "./tools.js";
 import { mailModule } from "./module.js";
-import type { ToolContext } from "../types.js";
 import type { GraphMessage, GraphMailFolder } from "./types.js";
+import { createToolContext } from "../../test-utils/graph-mock.js";
 
 // ---------------------------------------------------------------------------
 // Mock the Graph client
@@ -52,7 +52,7 @@ import { graphRequest } from "../../graph/client.js";
 
 const mockGraphRequest = vi.mocked(graphRequest);
 
-const ctx: ToolContext = { token: "test-token-abc" };
+const ctx = createToolContext({ token: "test-token-abc" });
 
 // ---------------------------------------------------------------------------
 // Test helpers

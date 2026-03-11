@@ -1,5 +1,4 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import type { ToolContext } from "../types.js";
 import type { DriveItem, Permission } from "./types.js";
 import {
   filesListTool,
@@ -10,6 +9,7 @@ import {
   filesDeleteTool,
   filesShareTool,
 } from "./tools.js";
+import { createToolContext } from "../../test-utils/graph-mock.js";
 
 // ---------------------------------------------------------------------------
 // Mock graphRequest
@@ -29,10 +29,7 @@ vi.stubGlobal("fetch", mockFetch);
 // Shared context
 // ---------------------------------------------------------------------------
 
-const ctx: ToolContext = {
-  token: "test-token",
-  timezone: "America/New_York",
-};
+const ctx = createToolContext();
 
 // ---------------------------------------------------------------------------
 // Fixtures

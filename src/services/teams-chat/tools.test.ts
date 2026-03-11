@@ -1,5 +1,4 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import type { ToolContext } from "../types.js";
 import type { GraphCollectionResponse } from "../../graph/client.js";
 import type { TeamsChat, TeamsChatMessage, TeamsChannel } from "./types.js";
 import {
@@ -10,6 +9,7 @@ import {
   teamsChannelMessagesTool,
   teamsSendChannelTool,
 } from "./tools.js";
+import { createToolContext } from "../../test-utils/graph-mock.js";
 
 // ---------------------------------------------------------------------------
 // Mock graphRequest
@@ -26,7 +26,7 @@ const mockGraphRequest = vi.mocked(graphRequest);
 // Shared fixtures
 // ---------------------------------------------------------------------------
 
-const ctx: ToolContext = { token: "test-token-abc" };
+const ctx = createToolContext({ token: "test-token-abc" });
 
 function chatFixture(overrides?: Partial<TeamsChat>): TeamsChat {
   return {
