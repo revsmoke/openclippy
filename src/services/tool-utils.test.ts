@@ -114,7 +114,8 @@ describe("formatShortDate", () => {
   });
 
   it("formats different dates correctly", () => {
-    const result = formatShortDate("2024-12-25T00:00:00Z");
+    // Use noon UTC to avoid timezone-boundary day shifts
+    const result = formatShortDate("2024-12-25T12:00:00Z");
     expect(result).toContain("Dec");
     expect(result).toContain("25");
     expect(result).toContain("2024");
@@ -141,8 +142,9 @@ describe("formatDateTime", () => {
     expect(result).toBe("not-a-date");
   });
 
-  it("formats dates at midnight", () => {
-    const result = formatDateTime("2025-06-01T00:00:00Z");
+  it("formats dates at noon UTC", () => {
+    // Use noon UTC to avoid timezone-boundary day shifts
+    const result = formatDateTime("2025-06-01T12:00:00Z");
     expect(result).toContain("Jun");
     expect(result).toContain("1");
     expect(result).toContain("2025");
