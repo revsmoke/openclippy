@@ -12,3 +12,5 @@ context_history/
 openclippy_microsoft_azure.md
 src/auth/*.json
 test-ws.mjs
+OpenClippy(Microsoft Graph format).json
+openclippy-portal-azure-com_overview.txt
