@@ -13,19 +13,7 @@ import { PluginRegistry } from "../plugins/registry.js";
 import { getEnabledServiceIds } from "../config/helpers.js";
 import type { ToolProfileId } from "../config/types.tools.js";
 
-// Service module imports — Phase 1
-import { mailModule } from "../services/mail/module.js";
-import { calendarModule } from "../services/calendar/module.js";
-import { todoModule } from "../services/todo/module.js";
-import { teamsChatModule } from "../services/teams-chat/module.js";
-// Service module imports — Phase 2
-import { onedriveModule } from "../services/onedrive/module.js";
-import { peopleModule } from "../services/people/module.js";
-import { presenceModule } from "../services/presence/module.js";
-// Service module imports — Phase 3
-import { plannerModule } from "../services/planner/module.js";
-import { onenoteModule } from "../services/onenote/module.js";
-import { sharepointModule } from "../services/sharepoint/module.js";
+import { registerBuiltinModules } from "../services/builtin-modules.js";
 
 export async function askCommand(message: string): Promise<void> {
   try {
@@ -54,19 +42,7 @@ export async function askCommand(message: string): Promise<void> {
 
     // 3. Build service registry, collect tools based on profile
     const registry = new ServiceRegistry();
-    // Phase 1 services
-    registry.register(mailModule);
-    registry.register(calendarModule);
-    registry.register(todoModule);
-    registry.register(teamsChatModule);
-    // Phase 2 services
-    registry.register(onedriveModule);
-    registry.register(peopleModule);
-    registry.register(presenceModule);
-    // Phase 3 services
-    registry.register(plannerModule);
-    registry.register(onenoteModule);
-    registry.register(sharepointModule);
+    registerBuiltinModules(registry);
 
     // Load plugins
     // Note: Plugins load after token acquisition. Plugin scopes registered here

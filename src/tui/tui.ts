@@ -16,17 +16,7 @@ import type { ToolProfileId } from "../config/types.tools.js";
 import type { AgentTool, ToolContext } from "../services/types.js";
 import type { ModelConfig } from "../agents/model-config.js";
 
-// All service module imports
-import { mailModule } from "../services/mail/module.js";
-import { calendarModule } from "../services/calendar/module.js";
-import { todoModule } from "../services/todo/module.js";
-import { teamsChatModule } from "../services/teams-chat/module.js";
-import { onedriveModule } from "../services/onedrive/module.js";
-import { peopleModule } from "../services/people/module.js";
-import { presenceModule } from "../services/presence/module.js";
-import { plannerModule } from "../services/planner/module.js";
-import { onenoteModule } from "../services/onenote/module.js";
-import { sharepointModule } from "../services/sharepoint/module.js";
+import { registerBuiltinModules } from "../services/builtin-modules.js";
 
 export type SlashCommandDef = {
   name: string;
@@ -111,16 +101,7 @@ export async function startTui(): Promise<void> {
 
   // 4. Build service registry
   const registry = new ServiceRegistry();
-  registry.register(mailModule);
-  registry.register(calendarModule);
-  registry.register(todoModule);
-  registry.register(teamsChatModule);
-  registry.register(onedriveModule);
-  registry.register(peopleModule);
-  registry.register(presenceModule);
-  registry.register(plannerModule);
-  registry.register(onenoteModule);
-  registry.register(sharepointModule);
+  registerBuiltinModules(registry);
 
   // Load plugins
   const pluginRegistry = new PluginRegistry(registry, scopeManager);
