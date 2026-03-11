@@ -1,6 +1,13 @@
-# OpenClippy
+<p align="center">
+  <img src="images/openclippy.svg" alt="OpenClippy" width="200" />
+</p>
 
-Autonomous AI work agent for Microsoft 365. OpenClippy connects to your M365 account via the Microsoft Graph API and manages email, calendar, tasks, Teams, files, and more through natural language.
+<h1 align="center">OpenClippy</h1>
+
+<p align="center">
+  <strong>Autonomous AI work agent for Microsoft 365</strong><br>
+  OpenClippy connects to your M365 account via the Microsoft Graph API and manages email, calendar, tasks, Teams, files, and more through natural language.
+</p>
 
 ## Quick Start
 

@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="../images/openclippy.svg" alt="OpenClippy" width="120" />
+</p>
+
 # Azure AD App Registration Guide
 
 This guide walks you through registering an Azure AD application so OpenClippy can access Microsoft 365 services on your behalf.
