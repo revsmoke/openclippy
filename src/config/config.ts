@@ -1,5 +1,4 @@
 import { readFile, mkdir, writeFile } from "node:fs/promises";
-import { existsSync } from "node:fs";
 import { dirname } from "node:path";
 import { parse as parseYaml, stringify as stringifyYaml } from "yaml";
 import { CONFIG_PATH, STATE_DIR } from "./paths.js";
@@ -36,11 +35,16 @@ function deepMerge<T extends Record<string, unknown>>(target: T, source: Partial
 export async function loadConfig(configPath?: string): Promise<OpenClippyConfig> {
   const path = configPath ?? CONFIG_PATH;
 
-  if (!existsSync(path)) {
-    return { ...DEFAULT_CONFIG };
+  let raw: string;
+  try {
+    raw = await readFile(path, "utf-8");
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code === "ENOENT") {
+      return { ...DEFAULT_CONFIG };
+    }
+    throw err;
   }
 
-  const raw = await readFile(path, "utf-8");
   const parsed = parseYaml(raw) as Partial<OpenClippyConfig> | null;
 
   if (!parsed || typeof parsed !== "object") {

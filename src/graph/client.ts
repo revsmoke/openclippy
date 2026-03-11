@@ -23,6 +23,7 @@ export class GraphApiError extends Error {
     public readonly status: number,
     public readonly body: string,
     public readonly code?: string,
+    public readonly retryAfterSeconds?: number,
   ) {
     super(`Graph API ${path} failed (${status}): ${body.slice(0, 200)}`);
     this.name = "GraphApiError";
@@ -81,7 +82,15 @@ export async function graphRequest<T>(params: GraphRequestParams): Promise<T> {
       } catch {
         // ignore parse errors
       }
-      throw new GraphApiError(params.path, res.status, text, code);
+      let retryAfterSeconds: number | undefined;
+      if (res.status === 429) {
+        const retryAfterHeader = res.headers.get("Retry-After");
+        if (retryAfterHeader) {
+          const parsed = Number(retryAfterHeader);
+          if (!isNaN(parsed) && parsed > 0) retryAfterSeconds = parsed;
+        }
+      }
+      throw new GraphApiError(params.path, res.status, text, code, retryAfterSeconds);
     }
 
     // 204 No Content
