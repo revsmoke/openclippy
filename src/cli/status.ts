@@ -29,8 +29,11 @@ export async function statusCommand(): Promise<void> {
       console.log(`   Account: ${account?.username ?? "unknown"}`);
       console.log(`   Tenant:  ${account?.tenantId ?? "unknown"}\n`);
 
-      // 4. Show each enabled service and whether scopes are granted
+      // 4. Show each enabled service and whether scopes are granted.
+      // Load the granted scopes persisted at login time so we can actually
+      // verify them instead of always reporting "not verified".
       const scopeManager = new ScopeManager();
+      await scopeManager.loadGrantedScopes();
       const enabledServices = getEnabledServiceIds(config);
 
       console.log("Services:");

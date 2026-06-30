@@ -1,5 +1,7 @@
 import { describe, it, expect } from "vitest";
+import { join } from "node:path";
 import { ScopeManager } from "./scope-manager.js";
+import { useTempDir } from "../test-utils/temp-dir.js";
 
 describe("ScopeManager", () => {
   it("computes required scopes for enabled services", () => {
@@ -32,6 +34,37 @@ describe("ScopeManager", () => {
     const base = mgr.getBaseScopes();
     expect(base).toContain("User.Read");
     expect(base).toContain("offline_access");
+  });
+
+  // --- Persistence tests ---
+
+  describe("granted-scope persistence", () => {
+    const tmp = useTempDir("scope-manager");
+
+    it("round-trips granted scopes through disk", async () => {
+      const dir = await tmp.create();
+      const path = join(dir, "granted-scopes.json");
+
+      const saver = new ScopeManager();
+      saver.recordGrantedScopes(["User.Read", "Mail.Read", "Mail.Send"]);
+      await saver.saveGrantedScopes(path);
+
+      // A fresh manager (as `status` uses) sees nothing until it loads
+      const loader = new ScopeManager();
+      expect(loader.hasRequiredScopes("mail")).toBe(false);
+
+      await loader.loadGrantedScopes(path);
+      expect(loader.hasRequiredScopes("mail")).toBe(true);
+      expect(loader.getGrantedScopes()).toContain("Mail.Read");
+    });
+
+    it("loadGrantedScopes silently no-ops when the file is missing", async () => {
+      const dir = await tmp.create();
+      const mgr = new ScopeManager();
+      // Should not throw on a non-existent path
+      await mgr.loadGrantedScopes(join(dir, "does-not-exist.json"));
+      expect(mgr.getGrantedScopes()).toHaveLength(0);
+    });
   });
 
   // --- Plugin scope registration tests ---

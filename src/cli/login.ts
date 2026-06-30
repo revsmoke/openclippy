@@ -30,9 +30,10 @@ export async function loginCommand(): Promise<void> {
     // 5. Call acquireToken — MSAL prints the device code message
     const result = await client.acquireToken(scopes);
 
-    // 6. Record granted scopes
+    // 6. Record granted scopes and persist them so `status` can verify them later
     if (result.scopes) {
       scopeManager.recordGrantedScopes(result.scopes);
+      await scopeManager.saveGrantedScopes();
     }
 
     // 7. Print success

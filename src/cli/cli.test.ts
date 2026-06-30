@@ -45,6 +45,8 @@ vi.mock("../auth/scope-manager.js", () => {
   ]);
   ScopeManager.prototype.getMissingScopes = vi.fn(() => []);
   ScopeManager.prototype.getGrantedScopes = vi.fn(() => []);
+  ScopeManager.prototype.saveGrantedScopes = vi.fn(async () => {});
+  ScopeManager.prototype.loadGrantedScopes = vi.fn(async () => {});
   return { ScopeManager };
 });
 

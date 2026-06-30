@@ -1,4 +1,7 @@
+import { readFile, writeFile, mkdir } from "node:fs/promises";
+import { dirname } from "node:path";
 import type { BuiltinServiceId } from "../config/types.services.js";
+import { GRANTED_SCOPES_PATH } from "../config/paths.js";
 
 /** Maps each builtin service to its required Graph API scopes */
 const SERVICE_SCOPES: Record<BuiltinServiceId, { required: string[]; optional: string[] }> = {
@@ -107,5 +110,38 @@ export class ScopeManager {
   /** Get all currently granted scopes */
   getGrantedScopes(): string[] {
     return [...this.grantedScopes];
+  }
+
+  /**
+   * Persist the currently granted scopes to disk so other commands (e.g. status)
+   * can verify which scopes were actually consented to during login.
+   * The login command records granted scopes in memory only; without this the
+   * status command has no way to know what was granted and reports everything
+   * as "not verified".
+   */
+  async saveGrantedScopes(path: string = GRANTED_SCOPES_PATH): Promise<void> {
+    await mkdir(dirname(path), { recursive: true });
+    await writeFile(path, JSON.stringify([...this.grantedScopes], null, 2), {
+      mode: 0o600,
+    });
+  }
+
+  /**
+   * Load previously persisted granted scopes from disk into this manager.
+   * Silently no-ops if the file doesn't exist yet (e.g. never logged in) or
+   * is unreadable, leaving the granted-scope set untouched.
+   */
+  async loadGrantedScopes(path: string = GRANTED_SCOPES_PATH): Promise<void> {
+    try {
+      const data = await readFile(path, "utf-8");
+      const scopes = JSON.parse(data) as unknown;
+      if (Array.isArray(scopes)) {
+        for (const s of scopes) {
+          if (typeof s === "string") this.grantedScopes.add(s);
+        }
+      }
+    } catch {
+      // No persisted scopes yet — leave grantedScopes as-is
+    }
   }
 }
