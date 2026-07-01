@@ -76,7 +76,7 @@ const DEFAULT_TEST_CONFIG = {
     presence: { enabled: true },
   },
   agent: {
-    model: "claude-sonnet-4-5-20250514",
+    model: "claude-sonnet-4-5-20250929",
     toolProfile: "standard",
     identity: { name: "Clippy", emoji: "\uD83D\uDCCE" },
   },

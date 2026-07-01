@@ -29,7 +29,7 @@ export const SLASH_COMMANDS: SlashCommandDef[] = [
   { name: "reset", description: "Clear conversation history and start fresh" },
   { name: "status", description: "Show authentication and service status" },
   { name: "services", description: "List enabled services and their capabilities" },
-  { name: "model", description: "Show or change the LLM model (e.g., /model claude-sonnet-4-5-20250514)" },
+  { name: "model", description: "Show or change the LLM model (e.g., /model claude-sonnet-4-5-20250929)" },
   { name: "quit", description: "Exit the TUI", aliases: ["exit", "q"] },
 ];
 

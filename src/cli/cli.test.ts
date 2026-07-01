@@ -54,7 +54,7 @@ vi.mock("../auth/scope-manager.js", () => {
 vi.mock("../agents/model-config.js", () => ({
   resolveModelConfig: vi.fn(() => ({
     provider: "anthropic",
-    model: "claude-sonnet-4-5-20250514",
+    model: "claude-sonnet-4-5-20250929",
     apiKey: "test-api-key",
     maxTokens: 4096,
   })),
@@ -141,7 +141,7 @@ const DEFAULT_TEST_CONFIG = {
     presence: { enabled: true },
   },
   agent: {
-    model: "claude-sonnet-4-5-20250514",
+    model: "claude-sonnet-4-5-20250929",
     toolProfile: "standard",
     identity: { name: "Clippy", emoji: "\uD83D\uDCCE" },
   },
@@ -270,7 +270,7 @@ describe("CLI Commands", () => {
 
       await statusCommand();
 
-      expect(capture.logs.some((l) => l.includes("claude-sonnet-4-5-20250514"))).toBe(true);
+      expect(capture.logs.some((l) => l.includes("claude-sonnet-4-5-20250929"))).toBe(true);
       expect(capture.logs.some((l) => l.includes("standard"))).toBe(true);
     });
   });

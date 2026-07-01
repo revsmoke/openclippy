@@ -27,9 +27,9 @@ describe("parseSlashCommand", () => {
   });
 
   it("recognizes /model command with args", () => {
-    expect(parseSlashCommand("/model claude-sonnet-4-5-20250514")).toEqual({
+    expect(parseSlashCommand("/model claude-sonnet-4-5-20250929")).toEqual({
       command: "model",
-      args: "claude-sonnet-4-5-20250514",
+      args: "claude-sonnet-4-5-20250929",
     });
   });
 
@@ -42,9 +42,9 @@ describe("parseSlashCommand", () => {
   });
 
   it("trims whitespace from args", () => {
-    expect(parseSlashCommand("/model   claude-sonnet-4-5-20250514  ")).toEqual({
+    expect(parseSlashCommand("/model   claude-sonnet-4-5-20250929  ")).toEqual({
       command: "model",
-      args: "claude-sonnet-4-5-20250514",
+      args: "claude-sonnet-4-5-20250929",
     });
   });
 });

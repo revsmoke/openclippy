@@ -96,7 +96,7 @@ describe("resolveModelConfig", () => {
 
   it("uses default model when none specified", () => {
     const config = resolveModelConfig({ apiKey: "sk-test" });
-    expect(config.model).toBe("claude-sonnet-4-5-20250514");
+    expect(config.model).toBe("claude-sonnet-4-5-20250929");
   });
 
   it("respects custom model", () => {
@@ -457,7 +457,7 @@ describe("runAgent", () => {
 
   const baseModelConfig = {
     provider: "anthropic" as const,
-    model: "claude-sonnet-4-5-20250514",
+    model: "claude-sonnet-4-5-20250929",
     apiKey: "sk-test",
     maxTokens: 4096,
   };
@@ -765,7 +765,7 @@ describe("runAgent", () => {
 
     const callArgs = mockCreate.mock.calls[0][0];
     expect(callArgs.system).toBe("Custom system prompt.");
-    expect(callArgs.model).toBe("claude-sonnet-4-5-20250514");
+    expect(callArgs.model).toBe("claude-sonnet-4-5-20250929");
     expect(callArgs.max_tokens).toBe(4096);
     expect(callArgs.tools).toHaveLength(1);
     expect(callArgs.tools[0].name).toBe("mail_list");

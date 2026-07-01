@@ -67,7 +67,7 @@ export class Gateway {
         session,
         modelConfig: {
           provider: "anthropic",
-          model: "claude-sonnet-4-5-20250514",
+          model: "claude-sonnet-4-5-20250929",
           apiKey: process.env.ANTHROPIC_API_KEY ?? "",
           maxTokens: 4096,
         },

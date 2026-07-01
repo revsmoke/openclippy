@@ -27,7 +27,7 @@ const mockLoadConfig = vi.mocked(loadConfig);
 const DEFAULT_TEST_CONFIG = {
   azure: { clientId: "test-client-id", tenantId: "test-tenant-id" },
   services: { mail: { enabled: true } },
-  agent: { model: "claude-sonnet-4-5-20250514", toolProfile: "standard" },
+  agent: { model: "claude-sonnet-4-5-20250929", toolProfile: "standard" },
   tools: { profile: "standard" as const },
   gateway: { port: 4100, host: "localhost" },
 };
