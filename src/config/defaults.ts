@@ -18,7 +18,7 @@ export const DEFAULT_CONFIG: OpenClippyConfig = {
     presence: { enabled: true },
   },
   agent: {
-    model: "claude-sonnet-4-5-20250929",
+    model: "claude-sonnet-5",
     toolProfile: "standard",
     identity: {
       name: "Clippy",
