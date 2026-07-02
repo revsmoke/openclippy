@@ -96,7 +96,7 @@ describe("resolveModelConfig", () => {
 
   it("uses default model when none specified", () => {
     const config = resolveModelConfig({ apiKey: "sk-test" });
-    expect(config.model).toBe("claude-sonnet-4-5-20250929");
+    expect(config.model).toBe("claude-sonnet-5");
   });
 
   it("respects custom model", () => {
