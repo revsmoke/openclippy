@@ -38,7 +38,7 @@ vi.mock("../config/config.js", () => ({
   loadConfig: vi.fn(async () => ({
     azure: { clientId: "test-client", tenantId: "test-tenant" },
     services: { mail: { enabled: true } },
-    agent: { model: "claude-sonnet-4-5-20250929", toolProfile: "standard" },
+    agent: { model: "claude-sonnet-4-5-20250929", toolProfile: "standard", apiKey: "test-api-key" },
     tools: { profile: "standard", allow: [], deny: [] },
     gateway: { port: 0, host: "127.0.0.1" },
   })),

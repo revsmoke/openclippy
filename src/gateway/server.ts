@@ -12,8 +12,18 @@ import { createHttpHandler, type HttpHandlerDeps } from "./server-http.js";
 import { WsHandler } from "./server-ws.js";
 import { runAgent } from "../agents/runtime.js";
 import { AgentSession } from "../agents/session.js";
-import type { GatewayConfig } from "../config/types.gateway.js";
+import { resolveModelConfig } from "../agents/model-config.js";
+import { buildSystemPrompt } from "../agents/prompt-builder.js";
+import { collectTools } from "../agents/tool-registry.js";
+import { ServiceRegistry } from "../services/registry.js";
+import { registerBuiltinModules } from "../services/builtin-modules.js";
+import { ScopeManager } from "../auth/scope-manager.js";
+import { MSALClient } from "../auth/msal-client.js";
 import { resolveAzureCredentials } from "../auth/credentials.js";
+import { loadConfig } from "../config/config.js";
+import { getEnabledServiceIds } from "../config/helpers.js";
+import type { GatewayConfig } from "../config/types.gateway.js";
+import type { ToolProfileId } from "../config/types.tools.js";
 
 const TOKEN_RENEWAL_INTERVAL_MS = 30 * 60 * 1000; // 30 minutes
 
@@ -25,6 +35,11 @@ export class Gateway {
   private _port: number;
   private _host: string;
   private _isRunning = false;
+
+  /** MSAL client + Graph scopes, built in start() from loaded config. Reused
+   *  by both per-request token acquisition and the renewal loop. */
+  private msalClient: MSALClient | null = null;
+  private graphScopes: string[] = [];
 
   constructor(config?: GatewayConfig) {
     this._port = config?.port ?? 4100;
@@ -58,22 +73,59 @@ export class Gateway {
 
     this.startedAt = Date.now();
 
-    // Build the shared runAsk function
+    // Load the full config so the gateway agent honours the same settings as
+    // the `ask`/`chat` commands (model, identity, enabled services, tool
+    // profile, Azure app) instead of hardcoding them.
+    const config = await loadConfig();
+
+    // Azure app + MSAL client come from config (falls back to env/defaults).
+    const creds = resolveAzureCredentials(config);
+    this.msalClient = new MSALClient(creds);
+
+    // Build the service registry and collect tools per the configured profile.
+    const registry = new ServiceRegistry();
+    registerBuiltinModules(registry);
+    const servicesConfig = config.services ?? {};
+    const profile = (config.tools?.profile ?? "standard") as ToolProfileId;
+    const tools = collectTools({ registry, servicesConfig, profile });
+    const enabledModules = registry.getEnabled(servicesConfig);
+    const identity = config.agent?.identity ?? { name: "Clippy", emoji: "📎" };
+
+    // Graph scopes needed by the enabled services — reused for renewal too.
+    const scopeManager = new ScopeManager();
+    this.graphScopes = scopeManager.computeRequiredScopes(getEnabledServiceIds(config));
+
+    // Build the shared runAsk function used by both HTTP and WebSocket handlers.
     const runAsk = async (message: string, _profile?: string): Promise<string> => {
-      // Create a transient session for each request
+      // Create a transient session for each request.
       const session = new AgentSession();
+
+      // Acquire a Graph token (silent when cached) so tools can call Graph.
+      const tokenResult = await this.msalClient!.acquireToken(this.graphScopes);
+
+      // Resolve model + API key from config (throws a clear error if missing).
+      const modelConfig = resolveModelConfig(config.agent ?? {});
+
+      // System prompt reflects the configured identity, enabled services, and user.
+      const systemPrompt = buildSystemPrompt({
+        identity,
+        services: enabledModules,
+        userInfo: {
+          displayName: tokenResult.account?.name ?? undefined,
+          email: tokenResult.account?.username ?? undefined,
+        },
+      });
+
       return runAgent({
         message,
         session,
-        modelConfig: {
-          provider: "anthropic",
-          model: "claude-sonnet-5",
-          apiKey: process.env.ANTHROPIC_API_KEY ?? "",
-          maxTokens: 4096,
+        modelConfig,
+        tools,
+        systemPrompt,
+        toolContext: {
+          token: tokenResult.accessToken,
+          userId: tokenResult.account?.localAccountId ?? undefined,
         },
-        tools: [],
-        systemPrompt: "You are Clippy, an AI assistant for Microsoft 365.",
-        toolContext: { token: "" },
       });
     };
 
@@ -141,11 +193,10 @@ export class Gateway {
   /** Silently refresh the MSAL token. Errors are logged, not thrown. */
   private async renewToken(): Promise<void> {
     try {
-      // Dynamic import to avoid hard dependency when mocking
-      const { MSALClient } = await import("../auth/msal-client.js");
-      const creds = resolveAzureCredentials();
-      const client = new MSALClient(creds);
-      await client.acquireToken(["https://graph.microsoft.com/.default"]);
+      // Reuse the config-derived client + scopes built in start(), so renewal
+      // targets the configured Azure app and the scopes the services need.
+      if (!this.msalClient) return;
+      await this.msalClient.acquireToken(this.graphScopes);
     } catch (err) {
       // Token renewal failure is non-fatal — log and continue
       console.warn("[Gateway] Token renewal failed:", err instanceof Error ? err.message : String(err));
