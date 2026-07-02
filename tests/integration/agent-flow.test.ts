@@ -653,9 +653,9 @@ describe("agent flow (integration)", () => {
     expect(callArgs.system).toContain("Teams Chat");
     expect(callArgs.system).toContain("Bryan");
 
-    // Tools should be passed (32 total with full profile)
+    // Tools should be passed (36 total with full profile)
     expect(callArgs.tools).toBeDefined();
-    expect(callArgs.tools.length).toBe(32);
+    expect(callArgs.tools.length).toBe(36);
 
     // Spot-check tool schema format
     const mailList = callArgs.tools.find(

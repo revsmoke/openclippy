@@ -64,8 +64,8 @@ describe("service registration (integration)", () => {
 
     const tools = registry.getAllTools(config);
 
-    // Mail: 11, Calendar: 8, ToDo: 6, Teams: 7 = 32 total
-    expect(tools.length).toBe(32);
+    // Mail: 15, Calendar: 8, ToDo: 6, Teams: 7 = 36 total
+    expect(tools.length).toBe(36);
 
     // Verify key tool names exist
     const names = tools.map((t) => t.name);

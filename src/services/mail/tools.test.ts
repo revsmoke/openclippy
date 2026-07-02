@@ -11,8 +11,13 @@ import {
   mailFlagTool,
   mailDeleteTool,
   mailFoldersTool,
+  mailCategorizeTool,
+  mailCategoriesTool,
+  mailFolderCreateTool,
+  mailPrioritizeTool,
 } from "./tools.js";
 import { mailModule } from "./module.js";
+import { filterToolsByProfile } from "../../agents/tool-profiles.js";
 import type { GraphMessage, GraphMailFolder } from "./types.js";
 import { createToolContext } from "../../test-utils/graph-mock.js";
 
@@ -729,6 +734,202 @@ describe("mail_folders", () => {
 });
 
 // ---------------------------------------------------------------------------
+// mail_categorize
+// ---------------------------------------------------------------------------
+
+describe("mailCategorizeTool", () => {
+  const tool = mailCategorizeTool();
+
+  beforeEach(() => {
+    mockGraphRequest.mockReset();
+  });
+
+  it("PATCHes the message with the category list", async () => {
+    mockGraphRequest.mockResolvedValue({});
+
+    const result = await tool.execute(
+      { messageId: "msg-1", categories: ["Finance", "Vendors"] },
+      ctx,
+    );
+
+    expect(result.isError).toBeUndefined();
+    expect(result.content).toContain("Finance, Vendors");
+    expect(mockGraphRequest).toHaveBeenCalledWith(
+      expect.objectContaining({
+        path: "/me/messages/msg-1",
+        method: "PATCH",
+        body: { categories: ["Finance", "Vendors"] },
+      }),
+    );
+  });
+
+  it("clears categories with an empty array", async () => {
+    mockGraphRequest.mockResolvedValue({});
+    const result = await tool.execute(
+      { messageId: "msg-1", categories: [] },
+      ctx,
+    );
+    expect(result.content).toContain("cleared");
+    expect(mockGraphRequest).toHaveBeenCalledWith(
+      expect.objectContaining({ body: { categories: [] } }),
+    );
+  });
+
+  it("errors on missing messageId or non-array categories", async () => {
+    expect((await tool.execute({ categories: [] }, ctx)).isError).toBe(true);
+    expect(
+      (await tool.execute({ messageId: "m", categories: "Finance" }, ctx))
+        .isError,
+    ).toBe(true);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// mail_categories
+// ---------------------------------------------------------------------------
+
+describe("mailCategoriesTool", () => {
+  const tool = mailCategoriesTool();
+
+  beforeEach(() => {
+    mockGraphRequest.mockReset();
+  });
+
+  it("lists master categories", async () => {
+    mockGraphRequest.mockResolvedValue({
+      value: [
+        { id: "c1", displayName: "Finance", color: "preset0" },
+        { id: "c2", displayName: "Personal", color: "preset3" },
+      ],
+    });
+
+    const result = await tool.execute({}, ctx);
+
+    expect(result.content).toContain("Master categories (2)");
+    expect(result.content).toContain("Finance");
+    expect(mockGraphRequest).toHaveBeenCalledWith(
+      expect.objectContaining({ path: "/me/outlook/masterCategories" }),
+    );
+  });
+
+  it("handles an empty category list", async () => {
+    mockGraphRequest.mockResolvedValue({ value: [] });
+    const result = await tool.execute({}, ctx);
+    expect(result.content).toBe("No master categories defined.");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// mail_folder_create
+// ---------------------------------------------------------------------------
+
+describe("mailFolderCreateTool", () => {
+  const tool = mailFolderCreateTool();
+
+  beforeEach(() => {
+    mockGraphRequest.mockReset();
+  });
+
+  it("creates a top-level folder", async () => {
+    mockGraphRequest.mockResolvedValue({
+      id: "new-folder-id",
+      displayName: "Vendors",
+    });
+
+    const result = await tool.execute({ name: "Vendors" }, ctx);
+
+    expect(result.content).toContain('"Vendors" created');
+    expect(result.content).toContain("new-folder-id");
+    expect(mockGraphRequest).toHaveBeenCalledWith(
+      expect.objectContaining({
+        path: "/me/mailFolders",
+        method: "POST",
+        body: { displayName: "Vendors" },
+      }),
+    );
+  });
+
+  it("nests under a parent folder when given", async () => {
+    mockGraphRequest.mockResolvedValue({ id: "child-id", displayName: "Invoices" });
+
+    await tool.execute({ name: "Invoices", parentFolderId: "parent-1" }, ctx);
+
+    expect(mockGraphRequest).toHaveBeenCalledWith(
+      expect.objectContaining({
+        path: "/me/mailFolders/parent-1/childFolders",
+      }),
+    );
+  });
+
+  it("errors on missing name", async () => {
+    expect((await tool.execute({}, ctx)).isError).toBe(true);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// mail_prioritize
+// ---------------------------------------------------------------------------
+
+describe("mailPrioritizeTool", () => {
+  const tool = mailPrioritizeTool();
+
+  beforeEach(() => {
+    mockGraphRequest.mockReset();
+  });
+
+  it("PATCHes the message importance", async () => {
+    mockGraphRequest.mockResolvedValue({});
+
+    const result = await tool.execute(
+      { messageId: "msg-1", importance: "high" },
+      ctx,
+    );
+
+    expect(result.content).toContain("importance set to high");
+    expect(mockGraphRequest).toHaveBeenCalledWith(
+      expect.objectContaining({
+        path: "/me/messages/msg-1",
+        method: "PATCH",
+        body: { importance: "high" },
+      }),
+    );
+  });
+
+  it("rejects invalid importance values", async () => {
+    const result = await tool.execute(
+      { messageId: "msg-1", importance: "critical" },
+      ctx,
+    );
+    expect(result.isError).toBe(true);
+    expect(mockGraphRequest).not.toHaveBeenCalled();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Tool-profile filtering for the new tools
+// ---------------------------------------------------------------------------
+
+describe("tool profiles for new mail tools", () => {
+  it("read-only keeps mail_categories but drops the write tools", () => {
+    const filtered = filterToolsByProfile(mailModule.tools(), "read-only");
+    const names = filtered.map((t) => t.name);
+    expect(names).toContain("mail_categories");
+    expect(names).not.toContain("mail_categorize");
+    expect(names).not.toContain("mail_folder_create");
+    expect(names).not.toContain("mail_prioritize");
+  });
+
+  it("standard exposes all new tools", () => {
+    const filtered = filterToolsByProfile(mailModule.tools(), "standard");
+    const names = filtered.map((t) => t.name);
+    expect(names).toContain("mail_categories");
+    expect(names).toContain("mail_categorize");
+    expect(names).toContain("mail_folder_create");
+    expect(names).toContain("mail_prioritize");
+  });
+});
+
+// ---------------------------------------------------------------------------
 // mailModule
 // ---------------------------------------------------------------------------
 
@@ -739,9 +940,9 @@ describe("mailModule", () => {
     expect(mailModule.meta.requiredScopes).toContain("Mail.Read");
   });
 
-  it("exposes 11 tools", () => {
+  it("exposes 15 tools", () => {
     const tools = mailModule.tools();
-    expect(tools).toHaveLength(11);
+    expect(tools).toHaveLength(15);
     const names = tools.map((t) => t.name);
     expect(names).toContain("mail_list");
     expect(names).toContain("mail_read");
@@ -754,6 +955,10 @@ describe("mailModule", () => {
     expect(names).toContain("mail_flag");
     expect(names).toContain("mail_delete");
     expect(names).toContain("mail_folders");
+    expect(names).toContain("mail_categorize");
+    expect(names).toContain("mail_categories");
+    expect(names).toContain("mail_folder_create");
+    expect(names).toContain("mail_prioritize");
   });
 
   it("has correct capabilities", () => {

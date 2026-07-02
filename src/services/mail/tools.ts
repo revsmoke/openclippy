@@ -6,6 +6,7 @@ import type { GraphCollectionResponse } from "../../graph/client.js";
 import type {
   GraphMessage,
   GraphMailFolder,
+  GraphOutlookCategory,
   GraphRecipient,
   SendMailPayload,
   ReplyPayload,
@@ -633,6 +634,187 @@ export function mailDeleteTool(): AgentTool {
       });
 
       return { content: `Message ${messageId} deleted successfully.` };
+    },
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Tool: mail_categorize
+// ---------------------------------------------------------------------------
+
+export function mailCategorizeTool(): AgentTool {
+  return {
+    name: "mail_categorize",
+    description:
+      "Assign Outlook categories to an email message. Replaces the message's " +
+      "current categories. Use mail_categories to list available category names.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        messageId: {
+          type: "string",
+          description: "The message ID to categorize",
+        },
+        categories: {
+          type: "array",
+          items: { type: "string" },
+          description:
+            "Category display names to assign (empty array clears categories)",
+        },
+      },
+      required: ["messageId", "categories"],
+    },
+    execute: async (input, context) => {
+      const messageId = requireString(input, "messageId");
+      if (typeof messageId !== "string") return messageId;
+
+      if (!Array.isArray(input.categories)) {
+        return errorResult("categories must be an array of category names");
+      }
+      const categories = input.categories.map(String);
+
+      await graphRequest<GraphMessage>({
+        token: context.token,
+        path: `/me/messages/${messageId}`,
+        method: "PATCH",
+        body: { categories },
+      });
+
+      return {
+        content:
+          categories.length > 0
+            ? `Message ${messageId} categorized as: ${categories.join(", ")}.`
+            : `Categories cleared from message ${messageId}.`,
+      };
+    },
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Tool: mail_categories
+// ---------------------------------------------------------------------------
+
+export function mailCategoriesTool(): AgentTool {
+  return {
+    name: "mail_categories",
+    description:
+      "List the user's Outlook master categories (names and colors).",
+    inputSchema: {
+      type: "object",
+      properties: {},
+    },
+    execute: async (_input, context) => {
+      const result = await graphRequest<
+        GraphCollectionResponse<GraphOutlookCategory>
+      >({
+        token: context.token,
+        path: "/me/outlook/masterCategories",
+      });
+
+      const categories = result.value ?? [];
+      if (categories.length === 0) {
+        return { content: "No master categories defined." };
+      }
+
+      const lines = categories.map(
+        (c) => `- ${c.displayName} (${c.color})`,
+      );
+      return {
+        content: `Master categories (${categories.length}):\n${lines.join("\n")}`,
+      };
+    },
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Tool: mail_folder_create
+// ---------------------------------------------------------------------------
+
+export function mailFolderCreateTool(): AgentTool {
+  return {
+    name: "mail_folder_create",
+    description:
+      "Create a new mail folder. Optionally nest it under a parent folder.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        name: {
+          type: "string",
+          description: "Display name for the new folder",
+        },
+        parentFolderId: {
+          type: "string",
+          description:
+            "Parent folder ID to nest under (default: top level). Use mail_folders to find IDs.",
+        },
+      },
+      required: ["name"],
+    },
+    execute: async (input, context) => {
+      const name = requireString(input, "name");
+      if (typeof name !== "string") return name;
+
+      const parentFolderId = input.parentFolderId as string | undefined;
+      const path = parentFolderId
+        ? `/me/mailFolders/${parentFolderId}/childFolders`
+        : "/me/mailFolders";
+
+      const created = await graphRequest<GraphMailFolder>({
+        token: context.token,
+        path,
+        method: "POST",
+        body: { displayName: name },
+      });
+
+      return {
+        content: `Folder "${created.displayName}" created (ID: ${created.id}).`,
+      };
+    },
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Tool: mail_prioritize
+// ---------------------------------------------------------------------------
+
+export function mailPrioritizeTool(): AgentTool {
+  return {
+    name: "mail_prioritize",
+    description: "Set the importance (low/normal/high) of an email message.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        messageId: {
+          type: "string",
+          description: "The message ID to update",
+        },
+        importance: {
+          type: "string",
+          enum: ["low", "normal", "high"],
+          description: "Importance level to set",
+        },
+      },
+      required: ["messageId", "importance"],
+    },
+    execute: async (input, context) => {
+      const messageId = requireString(input, "messageId");
+      if (typeof messageId !== "string") return messageId;
+
+      const importance = input.importance as string;
+      if (!["low", "normal", "high"].includes(importance)) {
+        return errorResult("importance must be one of: low, normal, high");
+      }
+
+      await graphRequest<GraphMessage>({
+        token: context.token,
+        path: `/me/messages/${messageId}`,
+        method: "PATCH",
+        body: { importance },
+      });
+
+      return {
+        content: `Message ${messageId} importance set to ${importance}.`,
+      };
     },
   };
 }

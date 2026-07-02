@@ -15,6 +15,10 @@ import {
   mailFlagTool,
   mailDeleteTool,
   mailFoldersTool,
+  mailCategorizeTool,
+  mailCategoriesTool,
+  mailFolderCreateTool,
+  mailPrioritizeTool,
 } from "./tools.js";
 
 export const mailModule: ServiceModule = {
@@ -47,6 +51,10 @@ export const mailModule: ServiceModule = {
     mailFlagTool(),
     mailDeleteTool(),
     mailFoldersTool(),
+    mailCategorizeTool(),
+    mailCategoriesTool(),
+    mailFolderCreateTool(),
+    mailPrioritizeTool(),
   ],
 
   status: {
