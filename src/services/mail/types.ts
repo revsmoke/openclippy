@@ -20,6 +20,8 @@ export type GraphMessageFlag = {
 
 export type GraphMessage = {
   id: string;
+  /** RFC 2822 message ID — stable across mailbox moves; not in the default $select */
+  internetMessageId?: string;
   subject: string;
   bodyPreview: string;
   body?: GraphItemBody;
@@ -39,6 +41,12 @@ export type GraphMessage = {
   parentFolderId?: string;
   flag?: GraphMessageFlag;
   webLink?: string;
+};
+
+export type GraphOutlookCategory = {
+  id: string;
+  displayName: string;
+  color: string;
 };
 
 export type GraphMailFolder = {

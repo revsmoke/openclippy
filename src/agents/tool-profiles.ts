@@ -25,6 +25,7 @@ const PROFILE_RULES: Record<ToolProfileId, ProfileRule> = {
       "*_folders",
       "*_freebusy",
       "*_lists",
+      "*_categories",
     ],
     blocked: [
       "*_send",

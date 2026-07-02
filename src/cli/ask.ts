@@ -11,6 +11,7 @@ import { AgentSession } from "../agents/session.js";
 import { runAgent } from "../agents/runtime.js";
 import { PluginRegistry } from "../plugins/registry.js";
 import { getEnabledServiceIds, getToolProfile } from "../config/helpers.js";
+import { loadTriageIntegration } from "../triage/integration.js";
 
 import { registerBuiltinModules } from "../services/builtin-modules.js";
 
@@ -68,6 +69,10 @@ export async function askCommand(message: string): Promise<void> {
       profile,
     });
 
+    // Triage awareness: rules summary + conversational tools (when set up)
+    const triage = await loadTriageIntegration(config, profile);
+    tools.push(...triage.tools);
+
     // 4. Build system prompt
     const enabledModules = registry.getEnabled(servicesConfig);
     const systemPrompt = buildSystemPrompt({
@@ -77,6 +82,7 @@ export async function askCommand(message: string): Promise<void> {
         displayName: tokenResult.account?.name ?? undefined,
         email: tokenResult.account?.username ?? undefined,
       },
+      contextHints: triage.hints,
     });
 
     // 5. Resolve model config

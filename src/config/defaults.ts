@@ -42,4 +42,13 @@ export const DEFAULT_CONFIG: OpenClippyConfig = {
     host: "localhost",
   },
   plugins: {},
+  triage: {
+    defaultLimit: 25,
+    chunkSize: 15,
+    autoAct: false,
+    improveAfterCorrections: 3,
+    retentionDays: 180,
+    maxRules: 50,
+    snippetChars: 300,
+  },
 };
