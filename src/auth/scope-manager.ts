@@ -19,7 +19,16 @@ const SERVICE_SCOPES: Record<BuiltinServiceId, { required: string[]; optional: s
   },
   "teams-chat": {
     required: ["Chat.Read"],
-    optional: ["Chat.ReadWrite", "ChatMessage.Send"],
+    // Channel.* scopes are needed by the channel tools (teams_channels_list,
+    // teams_channel_read, teams_channel_send); kept optional so chat-only
+    // tenants that refuse channel consent still pass hasRequiredScopes.
+    optional: [
+      "Chat.ReadWrite",
+      "ChatMessage.Send",
+      "Channel.ReadBasic.All",
+      "ChannelMessage.Read.All",
+      "ChannelMessage.Send",
+    ],
   },
   onedrive: {
     required: ["Files.Read"],
@@ -27,7 +36,8 @@ const SERVICE_SCOPES: Record<BuiltinServiceId, { required: string[]; optional: s
   },
   planner: {
     required: ["Tasks.Read"],
-    optional: ["Tasks.ReadWrite"],
+    // Group.Read.All lets planner_plans discover group-based plans.
+    optional: ["Tasks.ReadWrite", "Group.Read.All"],
   },
   onenote: {
     required: ["Notes.Read"],
@@ -43,7 +53,8 @@ const SERVICE_SCOPES: Record<BuiltinServiceId, { required: string[]; optional: s
   },
   presence: {
     required: ["Presence.Read"],
-    optional: ["Presence.Read.All"],
+    // Presence.ReadWrite is needed by presence_set / presence_clear.
+    optional: ["Presence.Read.All", "Presence.ReadWrite"],
   },
 };
 
