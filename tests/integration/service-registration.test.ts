@@ -102,12 +102,12 @@ describe("service registration (integration)", () => {
     expect(names).toContain("todo_delete");
 
     // Teams tools
-    expect(names).toContain("teams_list_chats");
-    expect(names).toContain("teams_read_chat");
-    expect(names).toContain("teams_send");
-    expect(names).toContain("teams_list_channels");
-    expect(names).toContain("teams_channel_messages");
-    expect(names).toContain("teams_send_channel");
+    expect(names).toContain("teams_chats_list");
+    expect(names).toContain("teams_chat_read");
+    expect(names).toContain("teams_chat_send");
+    expect(names).toContain("teams_channels_list");
+    expect(names).toContain("teams_channel_read");
+    expect(names).toContain("teams_channel_send");
   });
 
   it("filters tools by read-only profile", () => {
@@ -141,8 +141,8 @@ describe("service registration (integration)", () => {
     expect(names).not.toContain("todo_update");
     expect(names).not.toContain("todo_complete");
     expect(names).not.toContain("todo_delete");
-    expect(names).not.toContain("teams_send");
-    expect(names).not.toContain("teams_send_channel");
+    expect(names).not.toContain("teams_chat_send");
+    expect(names).not.toContain("teams_channel_send");
 
     // Read-only SHOULD include read/list tools
     expect(names).toContain("mail_list");
@@ -155,13 +155,13 @@ describe("service registration (integration)", () => {
     expect(names).toContain("todo_lists");
     expect(names).toContain("todo_tasks");
 
-    // Note: Teams tools have non-standard suffixes (e.g. teams_list_chats,
-    // teams_read_chat) that do NOT match the read-only allowed patterns
-    // (*_list, *_read, etc.), so they are all filtered out.
-    expect(names).not.toContain("teams_list_chats");
-    expect(names).not.toContain("teams_read_chat");
-    expect(names).not.toContain("teams_list_channels");
-    expect(names).not.toContain("teams_channel_messages");
+    // Teams read tools follow the verb-last convention (teams_chats_list,
+    // teams_chat_read, ...) so they match the read-only allowed patterns
+    // (*_list, *_read) and are available in read-only mode.
+    expect(names).toContain("teams_chats_list");
+    expect(names).toContain("teams_chat_read");
+    expect(names).toContain("teams_channels_list");
+    expect(names).toContain("teams_channel_read");
   });
 
   it("filters tools by standard profile (blocks delete only)", () => {
@@ -190,7 +190,7 @@ describe("service registration (integration)", () => {
     expect(names).toContain("calendar_update");
     expect(names).toContain("todo_create");
     expect(names).toContain("todo_update");
-    expect(names).toContain("teams_send");
+    expect(names).toContain("teams_chat_send");
   });
 
   it("full profile allows all tools including delete", () => {
@@ -229,16 +229,16 @@ describe("service registration (integration)", () => {
     expect(names).not.toContain("mail_send");
     expect(names).not.toContain("calendar_create");
     expect(names).not.toContain("todo_create");
-    expect(names).not.toContain("teams_send");
+    expect(names).not.toContain("teams_chat_send");
 
     // Verify it kept read tools
     expect(names).toContain("mail_list");
     expect(names).toContain("calendar_list");
     expect(names).toContain("todo_lists");
 
-    // Teams tools have non-standard suffixes and are all filtered out
-    // in read-only mode (e.g. teams_list_chats ends in _chats, not _list)
-    expect(names).not.toContain("teams_list_chats");
+    // Teams read tools follow the verb-last convention and are kept
+    // in read-only mode (teams_chats_list matches *_list)
+    expect(names).toContain("teams_chats_list");
   });
 
   it("builds system prompt with all services", () => {

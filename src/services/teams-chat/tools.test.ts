@@ -71,11 +71,11 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
-describe("teams_list_chats", () => {
+describe("teams_chats_list", () => {
   const tool = teamsListChatsTool();
 
   it("has correct metadata", () => {
-    expect(tool.name).toBe("teams_list_chats");
+    expect(tool.name).toBe("teams_chats_list");
     expect(tool.description).toBeTruthy();
     expect(tool.inputSchema).toBeDefined();
   });
@@ -134,11 +134,11 @@ describe("teams_list_chats", () => {
   });
 });
 
-describe("teams_read_chat", () => {
+describe("teams_chat_read", () => {
   const tool = teamsReadChatTool();
 
   it("has correct metadata", () => {
-    expect(tool.name).toBe("teams_read_chat");
+    expect(tool.name).toBe("teams_chat_read");
     expect(tool.inputSchema).toHaveProperty("required");
   });
 
@@ -237,11 +237,11 @@ describe("teams_read_chat", () => {
   });
 });
 
-describe("teams_send", () => {
+describe("teams_chat_send", () => {
   const tool = teamsSendTool();
 
   it("has correct metadata", () => {
-    expect(tool.name).toBe("teams_send");
+    expect(tool.name).toBe("teams_chat_send");
     expect(tool.inputSchema).toHaveProperty("required");
   });
 
@@ -276,11 +276,11 @@ describe("teams_send", () => {
   });
 });
 
-describe("teams_list_channels", () => {
+describe("teams_channels_list", () => {
   const tool = teamsListChannelsTool();
 
   it("has correct metadata", () => {
-    expect(tool.name).toBe("teams_list_channels");
+    expect(tool.name).toBe("teams_channels_list");
   });
 
   it("lists channels in a team", async () => {
@@ -324,11 +324,11 @@ describe("teams_list_channels", () => {
   });
 });
 
-describe("teams_channel_messages", () => {
+describe("teams_channel_read", () => {
   const tool = teamsChannelMessagesTool();
 
   it("has correct metadata", () => {
-    expect(tool.name).toBe("teams_channel_messages");
+    expect(tool.name).toBe("teams_channel_read");
     expect(tool.inputSchema).toHaveProperty("required");
   });
 
@@ -371,11 +371,11 @@ describe("teams_channel_messages", () => {
   });
 });
 
-describe("teams_send_channel", () => {
+describe("teams_channel_send", () => {
   const tool = teamsSendChannelTool();
 
   it("has correct metadata", () => {
-    expect(tool.name).toBe("teams_send_channel");
+    expect(tool.name).toBe("teams_channel_send");
   });
 
   it("sends a message to a channel", async () => {
@@ -426,12 +426,12 @@ describe("teamsChatModule integration", () => {
 
     expect(tools).toHaveLength(6);
     expect(names).toEqual([
-      "teams_list_chats",
-      "teams_read_chat",
-      "teams_send",
-      "teams_list_channels",
-      "teams_channel_messages",
-      "teams_send_channel",
+      "teams_chats_list",
+      "teams_chat_read",
+      "teams_chat_send",
+      "teams_channels_list",
+      "teams_channel_read",
+      "teams_channel_send",
     ]);
   });
 

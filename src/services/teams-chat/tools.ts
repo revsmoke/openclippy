@@ -45,7 +45,7 @@ function chatLabel(chat: TeamsChat): string {
 
 export function teamsListChatsTool(): AgentTool {
   return {
-    name: "teams_list_chats",
+    name: "teams_chats_list",
     description:
       "List the current user's Teams chats (1:1, group, and meeting chats). Returns chat id, type, topic, and creation time.",
     inputSchema: {
@@ -83,7 +83,7 @@ export function teamsListChatsTool(): AgentTool {
 
 export function teamsReadChatTool(): AgentTool {
   return {
-    name: "teams_read_chat",
+    name: "teams_chat_read",
     description:
       "Read recent messages from a Teams chat. Requires the chat id.",
     inputSchema: {
@@ -128,7 +128,7 @@ export function teamsReadChatTool(): AgentTool {
 
 export function teamsSendTool(): AgentTool {
   return {
-    name: "teams_send",
+    name: "teams_chat_send",
     description:
       "Send a message to a Teams chat. Requires the chat id and message content.",
     inputSchema: {
@@ -159,7 +159,7 @@ export function teamsSendTool(): AgentTool {
 
 export function teamsListChannelsTool(): AgentTool {
   return {
-    name: "teams_list_channels",
+    name: "teams_channels_list",
     description:
       "List channels in a Teams team. Requires the team id.",
     inputSchema: {
@@ -193,7 +193,7 @@ export function teamsListChannelsTool(): AgentTool {
 
 export function teamsChannelMessagesTool(): AgentTool {
   return {
-    name: "teams_channel_messages",
+    name: "teams_channel_read",
     description:
       "Read recent messages from a Teams channel. Requires team id and channel id.",
     inputSchema: {
@@ -241,7 +241,7 @@ export function teamsChannelMessagesTool(): AgentTool {
 
 export function teamsSendChannelTool(): AgentTool {
   return {
-    name: "teams_send_channel",
+    name: "teams_channel_send",
     description:
       "Send a message to a Teams channel. Requires team id, channel id, and message content.",
     inputSchema: {

@@ -568,10 +568,10 @@ describe("agent flow (integration)", () => {
   });
 
   // -------------------------------------------------------------------------
-  // teams_send tool with real module
+  // teams_chat_send tool with real module
   // -------------------------------------------------------------------------
-  it("uses teams_send to send a Teams message", async () => {
-    // First call: Anthropic says use teams_send
+  it("uses teams_chat_send to send a Teams message", async () => {
+    // First call: Anthropic says use teams_chat_send
     mockCreate.mockResolvedValueOnce({
       id: "msg_1",
       type: "message",
@@ -580,7 +580,7 @@ describe("agent flow (integration)", () => {
         {
           type: "tool_use",
           id: "toolu_teams_1",
-          name: "teams_send",
+          name: "teams_chat_send",
           input: {
             chatId: "chat-abc",
             content: "Hello team! The deployment is complete.",
@@ -708,16 +708,16 @@ describe("agent flow (integration)", () => {
     expect(toolNames).not.toContain("mail_send");
     expect(toolNames).not.toContain("calendar_create");
     expect(toolNames).not.toContain("todo_create");
-    expect(toolNames).not.toContain("teams_send");
+    expect(toolNames).not.toContain("teams_chat_send");
 
     // Read tools with standard suffixes should be present
     expect(toolNames).toContain("mail_list");
     expect(toolNames).toContain("calendar_list");
     expect(toolNames).toContain("todo_lists");
 
-    // Teams tools have non-standard suffixes (e.g. _chats, _chat)
-    // that don't match the read-only allowed patterns, so they are filtered out
-    expect(toolNames).not.toContain("teams_list_chats");
+    // Teams read tools follow the verb-last convention (teams_chats_list
+    // matches *_list) so they are available in read-only mode
+    expect(toolNames).toContain("teams_chats_list");
   });
 
   // -------------------------------------------------------------------------

@@ -48,7 +48,7 @@ export const teamsChatModule: ServiceModule = {
   ],
 
   promptHints: () => [
-    "Use teams_list_chats to discover chat ids before reading or sending messages.",
-    "Use teams_list_channels with a teamId to find channel ids before reading or posting to channels.",
+    "Use teams_chats_list to discover chat ids before reading or sending messages.",
+    "Use teams_channels_list with a teamId to find channel ids before reading or posting to channels.",
   ],
 };
