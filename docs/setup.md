@@ -73,6 +73,7 @@ After registration, copy these values from the **Overview** page:
 |------------|---------|
 | `Chat.Read` | List and read chat messages |
 | `ChatMessage.Send` | Send chat messages |
+| `Team.ReadBasic.All` | List the teams you belong to |
 | `Channel.ReadBasic.All` | List team channels |
 | `ChannelMessage.Read.All` | Read channel messages |
 | `ChannelMessage.Send` | Post to channels |

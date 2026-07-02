@@ -1,7 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { GraphCollectionResponse } from "../../graph/client.js";
-import type { TeamsChat, TeamsChatMessage, TeamsChannel } from "./types.js";
+import type { TeamsChat, TeamsChatMessage, TeamsChannel, TeamsTeam } from "./types.js";
 import {
+  teamsListTool,
   teamsListChatsTool,
   teamsReadChatTool,
   teamsSendTool,
@@ -69,6 +70,56 @@ function collectionResponse<T>(value: T[]): GraphCollectionResponse<T> {
 
 beforeEach(() => {
   vi.clearAllMocks();
+});
+
+function teamFixture(overrides?: Partial<TeamsTeam>): TeamsTeam {
+  return {
+    id: "team-1",
+    displayName: "Engineering",
+    description: "Engineering department team",
+    ...overrides,
+  };
+}
+
+describe("teams_list", () => {
+  const tool = teamsListTool();
+
+  it("has correct metadata", () => {
+    expect(tool.name).toBe("teams_list");
+    expect(tool.description).toBeTruthy();
+    expect(tool.inputSchema).toBeDefined();
+  });
+
+  it("lists joined teams", async () => {
+    mockGraphRequest.mockResolvedValueOnce(
+      collectionResponse([
+        teamFixture(),
+        teamFixture({ id: "team-2", displayName: "Marketing", description: null }),
+      ]),
+    );
+
+    const result = await tool.execute({}, ctx);
+
+    expect(result.isError).toBeUndefined();
+    expect(result.content).toContain("Engineering");
+    expect(result.content).toContain("team-1");
+    expect(result.content).toContain("Engineering department team");
+    expect(result.content).toContain("Marketing");
+    expect(result.content).toContain("team-2");
+    expect(mockGraphRequest).toHaveBeenCalledWith(
+      expect.objectContaining({
+        token: "test-token-abc",
+        path: "/me/joinedTeams",
+      }),
+    );
+  });
+
+  it("returns message when user has no teams", async () => {
+    mockGraphRequest.mockResolvedValueOnce(collectionResponse([]));
+
+    const result = await tool.execute({}, ctx);
+    expect(result.content).toBe("You are not a member of any teams.");
+  });
 });
 
 describe("teams_chats_list", () => {
@@ -418,14 +469,15 @@ describe("teams_channel_send", () => {
 });
 
 describe("teamsChatModule integration", () => {
-  it("exposes all 6 tools from module", async () => {
+  it("exposes all 7 tools from module", async () => {
     // Dynamic import to test the module wiring
     const { teamsChatModule } = await import("./module.js");
     const tools = teamsChatModule.tools();
     const names = tools.map((t) => t.name);
 
-    expect(tools).toHaveLength(6);
+    expect(tools).toHaveLength(7);
     expect(names).toEqual([
+      "teams_list",
       "teams_chats_list",
       "teams_chat_read",
       "teams_chat_send",
@@ -445,6 +497,7 @@ describe("teamsChatModule integration", () => {
     expect(teamsChatModule.meta.requiredScopes).toContain("Channel.ReadBasic.All");
     expect(teamsChatModule.meta.requiredScopes).toContain("ChannelMessage.Read.All");
     expect(teamsChatModule.meta.requiredScopes).toContain("ChannelMessage.Send");
+    expect(teamsChatModule.meta.requiredScopes).toContain("Team.ReadBasic.All");
     expect(teamsChatModule.capabilities.read).toBe(true);
     expect(teamsChatModule.capabilities.write).toBe(true);
     expect(teamsChatModule.capabilities.delete).toBe(false);

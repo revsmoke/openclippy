@@ -1,5 +1,6 @@
 import type { ServiceModule } from "../types.js";
 import {
+  teamsListTool,
   teamsListChatsTool,
   teamsReadChatTool,
   teamsSendTool,
@@ -27,6 +28,7 @@ export const teamsChatModule: ServiceModule = {
       "Channel.ReadBasic.All",
       "ChannelMessage.Read.All",
       "ChannelMessage.Send",
+      "Team.ReadBasic.All",
     ],
   },
 
@@ -39,6 +41,7 @@ export const teamsChatModule: ServiceModule = {
   },
 
   tools: () => [
+    teamsListTool(),
     teamsListChatsTool(),
     teamsReadChatTool(),
     teamsSendTool(),
@@ -48,6 +51,7 @@ export const teamsChatModule: ServiceModule = {
   ],
 
   promptHints: () => [
+    "Use teams_list to discover the team ids of the teams the user belongs to.",
     "Use teams_chats_list to discover chat ids before reading or sending messages.",
     "Use teams_channels_list with a teamId to find channel ids before reading or posting to channels.",
   ],

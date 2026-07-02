@@ -9,7 +9,7 @@ OpenClippy connects to 10 Microsoft 365 services via the Microsoft Graph API. Ea
 | [Mail](#mail) | `mail` | Outlook Mail | 11 | Mail.Read |
 | [Calendar](#calendar) | `calendar` | Outlook Calendar | 8 | Calendars.Read |
 | [To Do](#to-do) | `todo` | To Do | 6 | Tasks.Read |
-| [Teams Chat](#teams-chat) | `teams-chat` | Teams Chat | 6 | Chat.Read |
+| [Teams Chat](#teams-chat) | `teams-chat` | Teams Chat | 7 | Chat.Read |
 | [OneDrive](#onedrive) | `onedrive` | OneDrive | 7 | Files.Read |
 | [People](#people--contacts) | `people` | People & Contacts | 3 | People.Read |
 | [Presence](#presence) | `presence` | Presence | 3 | Presence.Read |
@@ -17,7 +17,7 @@ OpenClippy connects to 10 Microsoft 365 services via the Microsoft Graph API. Ea
 | [OneNote](#onenote) | `onenote` | OneNote | 5 | Notes.Read |
 | [SharePoint](#sharepoint) | `sharepoint` | SharePoint | 6 | Sites.Read.All |
 
-**Total: 61 tools across 10 services**
+**Total: 62 tools across 10 services**
 
 ## Capabilities Matrix
 
@@ -86,11 +86,11 @@ Supports Graph change notification subscriptions on `/me/events`.
 **Description:** Read and send messages in Microsoft Teams chats and channels
 
 **Required Scopes:** `Chat.Read`
-**Optional Scopes:** `Chat.ReadWrite`, `ChatMessage.Send` (send chat messages), `Channel.ReadBasic.All`, `ChannelMessage.Read.All`, `ChannelMessage.Send` (channel tools)
+**Optional Scopes:** `Chat.ReadWrite`, `ChatMessage.Send` (send chat messages), `Team.ReadBasic.All` (list joined teams), `Channel.ReadBasic.All`, `ChannelMessage.Read.All`, `ChannelMessage.Send` (channel tools)
 
-**Tools:** `teams_chats_list`, `teams_chat_read`, `teams_chat_send`, `teams_channels_list`, `teams_channel_read`, `teams_channel_send`
+**Tools:** `teams_list`, `teams_chats_list`, `teams_chat_read`, `teams_chat_send`, `teams_channels_list`, `teams_channel_read`, `teams_channel_send`
 
-All scopes are requested at login when the service is enabled; only `Chat.Read` is needed for the service to count as available. Some organizations require admin consent for the `Channel.*` / `.All` scopes — without them the channel tools will fail at the Graph API.
+All scopes are requested at login when the service is enabled; only `Chat.Read` is needed for the service to count as available. Some organizations require admin consent for the `Team.*` / `Channel.*` / `.All` scopes — without them the team/channel tools will fail at the Graph API.
 
 ---
 

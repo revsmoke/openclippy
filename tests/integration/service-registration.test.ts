@@ -64,8 +64,8 @@ describe("service registration (integration)", () => {
 
     const tools = registry.getAllTools(config);
 
-    // Mail: 11, Calendar: 8, ToDo: 6, Teams: 6 = 31 total
-    expect(tools.length).toBe(31);
+    // Mail: 11, Calendar: 8, ToDo: 6, Teams: 7 = 32 total
+    expect(tools.length).toBe(32);
 
     // Verify key tool names exist
     const names = tools.map((t) => t.name);
@@ -102,6 +102,7 @@ describe("service registration (integration)", () => {
     expect(names).toContain("todo_delete");
 
     // Teams tools
+    expect(names).toContain("teams_list");
     expect(names).toContain("teams_chats_list");
     expect(names).toContain("teams_chat_read");
     expect(names).toContain("teams_chat_send");
@@ -155,9 +156,10 @@ describe("service registration (integration)", () => {
     expect(names).toContain("todo_lists");
     expect(names).toContain("todo_tasks");
 
-    // Teams read tools follow the verb-last convention (teams_chats_list,
-    // teams_chat_read, ...) so they match the read-only allowed patterns
-    // (*_list, *_read) and are available in read-only mode.
+    // Teams read tools follow the verb-last convention (teams_list,
+    // teams_chats_list, teams_chat_read, ...) so they match the read-only
+    // allowed patterns (*_list, *_read) and are available in read-only mode.
+    expect(names).toContain("teams_list");
     expect(names).toContain("teams_chats_list");
     expect(names).toContain("teams_chat_read");
     expect(names).toContain("teams_channels_list");

@@ -1,6 +1,6 @@
 # Tool Reference
 
-Complete reference for all 61 tools across OpenClippy's 10 service modules. Tools are what the AI agent calls to interact with Microsoft 365 on your behalf.
+Complete reference for all 62 tools across OpenClippy's 10 service modules. Tools are what the AI agent calls to interact with Microsoft 365 on your behalf.
 
 ## Tool Profiles
 
@@ -282,6 +282,12 @@ Delete a Microsoft To Do task.
 ---
 
 ## Teams Chat Tools
+
+### teams_list
+
+List the Microsoft Teams teams the current user is a member of. Returns team ID, name, and description — use the team ID with the channel tools.
+
+No parameters required.
 
 ### teams_chats_list
 

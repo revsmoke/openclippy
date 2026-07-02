@@ -19,15 +19,17 @@ const SERVICE_SCOPES: Record<BuiltinServiceId, { required: string[]; optional: s
   },
   "teams-chat": {
     required: ["Chat.Read"],
-    // Channel.* scopes are needed by the channel tools (teams_channels_list,
-    // teams_channel_read, teams_channel_send); kept optional so chat-only
-    // tenants that refuse channel consent still pass hasRequiredScopes.
+    // Channel.*/Team.* scopes are needed by the team/channel tools
+    // (teams_list, teams_channels_list, teams_channel_read,
+    // teams_channel_send); kept optional so chat-only tenants that refuse
+    // the extra consent still pass hasRequiredScopes.
     optional: [
       "Chat.ReadWrite",
       "ChatMessage.Send",
       "Channel.ReadBasic.All",
       "ChannelMessage.Read.All",
       "ChannelMessage.Send",
+      "Team.ReadBasic.All",
     ],
   },
   onedrive: {

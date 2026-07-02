@@ -6,7 +6,7 @@
 
 <p align="center">
   <strong>Your autonomous AI work agent for Microsoft 365.</strong><br>
-  61 tools. 10 services. 4 permission levels. One agent that respects your security boundaries.
+  62 tools. 10 services. 4 permission levels. One agent that respects your security boundaries.
 </p>
 
 <p align="center">
@@ -41,7 +41,7 @@ openclippy ask "Find all files in OneDrive related to the Q1 budget"
 
 AI agents that manage your Microsoft 365 are powerful — but they need guardrails. OpenClippy was built with a few principles that set it apart:
 
-- **Focused scope.** 10 M365 services with 61 well-defined tools. Not an everything-agent — a purpose-built M365 agent.
+- **Focused scope.** 10 M365 services with 62 well-defined tools. Not an everything-agent — a purpose-built M365 agent.
 - **Granular permissions.** 4 tool profiles from `read-only` (can't change anything) to `admin` (org-wide ops). You decide what the agent can do.
 - **No stored Microsoft secrets.** Device code auth via MSAL — your Microsoft credentials stay with Microsoft, not in a config file. (The Anthropic API key for the agent lives in your config or environment.)
 - **Auditable codebase.** TypeScript (strict mode), clean module boundaries, MIT licensed. Read every line if you want.
@@ -90,7 +90,7 @@ See [docs/setup.md](docs/setup.md) for the full Azure AD app registration walkth
 
 ## Features
 
-OpenClippy provides **61 tools** across **10 Microsoft 365 services**:
+OpenClippy provides **62 tools** across **10 Microsoft 365 services**:
 
 | Service | What It Does |
 |---------|-------------|
@@ -235,7 +235,7 @@ CLI (ask/chat/TUI)        Gateway daemon (optional)
 
 - [Azure AD Setup Guide](docs/setup.md) — Register your app and configure permissions
 - [Service Reference](docs/services.md) — All 10 services with capabilities, scopes, and tools
-- [Tool Reference](docs/tools.md) — Detailed reference for all 61 tools with parameters
+- [Tool Reference](docs/tools.md) — Detailed reference for all 62 tools with parameters
 - [Plugin Authoring Guide](docs/plugin-authoring.md) — Build custom service integrations
 
 ---

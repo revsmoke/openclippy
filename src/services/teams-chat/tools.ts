@@ -2,7 +2,7 @@ import { graphRequest, type GraphCollectionResponse } from "../../graph/client.j
 import { buildODataQuery } from "../../graph/types.js";
 import type { AgentTool, ToolContext, ToolResult } from "../types.js";
 import { errorResult } from "../tool-utils.js";
-import type { TeamsChat, TeamsChatMessage, TeamsChannel } from "./types.js";
+import type { TeamsChat, TeamsChatMessage, TeamsChannel, TeamsTeam } from "./types.js";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -42,6 +42,34 @@ function chatLabel(chat: TeamsChat): string {
 // ---------------------------------------------------------------------------
 // Tool factories
 // ---------------------------------------------------------------------------
+
+export function teamsListTool(): AgentTool {
+  return {
+    name: "teams_list",
+    description:
+      "List the Microsoft Teams teams the current user is a member of. " +
+      "Returns team id, name, and description — use the team id with the channel tools.",
+    inputSchema: {
+      type: "object",
+      properties: {},
+    },
+    async execute(_input: Record<string, unknown>, ctx: ToolContext): Promise<ToolResult> {
+      const res = await graphRequest<GraphCollectionResponse<TeamsTeam>>({
+        token: ctx.token,
+        path: "/me/joinedTeams",
+      });
+
+      if (!res.value.length) {
+        return { content: "You are not a member of any teams." };
+      }
+
+      const lines = res.value.map(
+        (t) => `- **${t.displayName}** | id: ${t.id}${t.description ? ` | ${t.description}` : ""}`,
+      );
+      return { content: lines.join("\n") };
+    },
+  };
+}
 
 export function teamsListChatsTool(): AgentTool {
   return {
