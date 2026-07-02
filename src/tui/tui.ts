@@ -12,6 +12,7 @@ import { AgentSession } from "../agents/session.js";
 import { runAgent } from "../agents/runtime.js";
 import { PluginRegistry } from "../plugins/registry.js";
 import { getEnabledServiceIds, getToolProfile } from "../config/helpers.js";
+import { loadTriageIntegration } from "../triage/integration.js";
 import type { AgentTool, ToolContext } from "../services/types.js";
 import type { ModelConfig } from "../agents/model-config.js";
 
@@ -120,6 +121,10 @@ export async function startTui(): Promise<void> {
   const profile = getToolProfile(config);
   const tools = collectTools({ registry, servicesConfig, profile });
 
+  // Triage awareness: rules summary + conversational tools (when set up)
+  const triage = await loadTriageIntegration(config, profile);
+  tools.push(...triage.tools);
+
   // 5. Build system prompt
   const enabledModules = registry.getEnabled(servicesConfig);
   const systemPrompt = buildSystemPrompt({
@@ -129,6 +134,7 @@ export async function startTui(): Promise<void> {
       displayName: tokenResult.account?.name ?? undefined,
       email: tokenResult.account?.username ?? undefined,
     },
+    contextHints: triage.hints,
   });
 
   // 6. Resolve model config
