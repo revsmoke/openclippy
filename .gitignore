@@ -21,12 +21,7 @@ CURRENT_PLAN.md
 agent_plans/
 context_history/
 
-# Local notes & scratch files (not part of the shipped repo)
-openclippy_microsoft_azure.md
-openclippy-portal-azure-com_overview.txt
-openclippy-promotion-plan.md
-OpenClippy(Microsoft Graph format).json
-skills-explorer.html
+# Local scratch files (not part of the shipped repo)
 test-ws.mjs
 images/openclippy_sprites.svg
 images/openclippy.html
