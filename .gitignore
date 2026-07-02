@@ -1,22 +1,32 @@
+# Build & dependencies
 node_modules/
 dist/
-.env
-*.log
-.DS_Store
 coverage/
+package-lock.json   # repo uses pnpm (pnpm-lock.yaml is the lockfile)
+
+# Secrets & local state
+.env
+src/auth/*.json
+*.log
+.claude/launch.json
+
+# OS / editor noise
+.DS_Store
 *.psd
+
+# Local-only project memory & planning artifacts
 PLAN.md
 CURRENT_PLAN.md
 agent_plans/
 context_history/
+
+# Local notes & scratch files (not part of the shipped repo)
 openclippy_microsoft_azure.md
-src/auth/*.json
-test-ws.mjs
-OpenClippy(Microsoft Graph format).json
 openclippy-portal-azure-com_overview.txt
-skills-explorer.html
-images/openclippy_sprites.svg
-.gitignore
-images/openclippy.html
-.claude/launch.json
 openclippy-promotion-plan.md
+OpenClippy(Microsoft Graph format).json
+skills-explorer.html
+test-ws.mjs
+images/openclippy_sprites.svg
+images/openclippy.html
+images/openclippy-gsap.html
