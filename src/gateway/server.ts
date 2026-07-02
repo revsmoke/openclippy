@@ -21,9 +21,8 @@ import { ScopeManager } from "../auth/scope-manager.js";
 import { MSALClient } from "../auth/msal-client.js";
 import { resolveAzureCredentials } from "../auth/credentials.js";
 import { loadConfig } from "../config/config.js";
-import { getEnabledServiceIds } from "../config/helpers.js";
+import { getEnabledServiceIds, getToolProfile } from "../config/helpers.js";
 import type { GatewayConfig } from "../config/types.gateway.js";
-import type { ToolProfileId } from "../config/types.tools.js";
 
 const TOKEN_RENEWAL_INTERVAL_MS = 30 * 60 * 1000; // 30 minutes
 
@@ -86,7 +85,7 @@ export class Gateway {
     const registry = new ServiceRegistry();
     registerBuiltinModules(registry);
     const servicesConfig = config.services ?? {};
-    const profile = (config.tools?.profile ?? "standard") as ToolProfileId;
+    const profile = getToolProfile(config);
     const tools = collectTools({ registry, servicesConfig, profile });
     const enabledModules = registry.getEnabled(servicesConfig);
     const identity = config.agent?.identity ?? { name: "Clippy", emoji: "📎" };

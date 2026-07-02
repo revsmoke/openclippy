@@ -3,7 +3,7 @@ import { getErrorMessage } from "../services/tool-utils.js";
 import { resolveAzureCredentials } from "../auth/credentials.js";
 import { MSALClient } from "../auth/msal-client.js";
 import { ScopeManager } from "../auth/scope-manager.js";
-import { getEnabledServiceIds } from "../config/helpers.js";
+import { getEnabledServiceIds, getToolProfile } from "../config/helpers.js";
 
 export async function statusCommand(): Promise<void> {
   try {
@@ -50,7 +50,7 @@ export async function statusCommand(): Promise<void> {
 
     // Show agent config
     console.log(`\nAgent: ${config.agent?.model ?? "not configured"}`);
-    console.log(`Tool Profile: ${config.tools?.profile ?? "standard"}`);
+    console.log(`Tool Profile: ${getToolProfile(config)}`);
   } catch (err) {
     console.error(`\u274C Status check failed: ${getErrorMessage(err)}`);
     process.exitCode = 1;

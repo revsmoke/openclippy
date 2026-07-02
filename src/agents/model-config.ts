@@ -1,4 +1,5 @@
 import type { AgentConfig } from "../config/types.agent.js";
+import { DEFAULT_MODEL } from "../config/defaults.js";
 
 export type ModelConfig = {
   provider: "anthropic";
@@ -7,7 +8,6 @@ export type ModelConfig = {
   maxTokens: number;
 };
 
-const DEFAULT_MODEL = "claude-sonnet-5";
 const DEFAULT_MAX_TOKENS = 4096;
 
 /**

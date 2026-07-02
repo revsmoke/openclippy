@@ -11,8 +11,7 @@ import { buildSystemPrompt } from "../agents/prompt-builder.js";
 import { AgentSession } from "../agents/session.js";
 import { runAgent } from "../agents/runtime.js";
 import { PluginRegistry } from "../plugins/registry.js";
-import { getEnabledServiceIds } from "../config/helpers.js";
-import type { ToolProfileId } from "../config/types.tools.js";
+import { getEnabledServiceIds, getToolProfile } from "../config/helpers.js";
 import type { AgentTool, ToolContext } from "../services/types.js";
 import type { ModelConfig } from "../agents/model-config.js";
 
@@ -118,7 +117,7 @@ export async function startTui(): Promise<void> {
   }
 
   const servicesConfig = config.services ?? {};
-  const profile = (config.tools?.profile ?? "standard") as ToolProfileId;
+  const profile = getToolProfile(config);
   const tools = collectTools({ registry, servicesConfig, profile });
 
   // 5. Build system prompt

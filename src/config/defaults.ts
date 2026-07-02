@@ -1,5 +1,9 @@
 import type { OpenClippyConfig } from "./types.base.js";
 
+/** Canonical default agent model — single source of truth (also used by
+ *  resolveModelConfig's fallback). */
+export const DEFAULT_MODEL = "claude-sonnet-5";
+
 export const DEFAULT_CONFIG: OpenClippyConfig = {
   azure: {
     clientId: "bfe7dd6e-ed60-4bf4-8396-801a8eada469",
@@ -18,15 +22,18 @@ export const DEFAULT_CONFIG: OpenClippyConfig = {
     presence: { enabled: true },
   },
   agent: {
-    model: "claude-sonnet-5",
+    model: DEFAULT_MODEL,
     toolProfile: "standard",
     identity: {
       name: "Clippy",
       emoji: "📎",
     },
   },
+  // Note: no `profile` default here on purpose. The effective profile is
+  // resolved by getToolProfile() as `tools.profile ?? agent.toolProfile ??
+  // "standard"`, so leaving this unset lets a wizard-written agent.toolProfile
+  // take effect instead of always being overridden by a "standard" default.
   tools: {
-    profile: "standard",
     allow: [],
     deny: [],
   },

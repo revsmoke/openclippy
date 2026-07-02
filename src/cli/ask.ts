@@ -10,8 +10,7 @@ import { buildSystemPrompt } from "../agents/prompt-builder.js";
 import { AgentSession } from "../agents/session.js";
 import { runAgent } from "../agents/runtime.js";
 import { PluginRegistry } from "../plugins/registry.js";
-import { getEnabledServiceIds } from "../config/helpers.js";
-import type { ToolProfileId } from "../config/types.tools.js";
+import { getEnabledServiceIds, getToolProfile } from "../config/helpers.js";
 
 import { registerBuiltinModules } from "../services/builtin-modules.js";
 
@@ -62,7 +61,7 @@ export async function askCommand(message: string): Promise<void> {
     }
 
     const servicesConfig = config.services ?? {};
-    const profile = (config.tools?.profile ?? "standard") as ToolProfileId;
+    const profile = getToolProfile(config);
     const tools = collectTools({
       registry,
       servicesConfig,
