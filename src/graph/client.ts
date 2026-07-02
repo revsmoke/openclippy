@@ -96,7 +96,13 @@ export async function graphRequest<T>(params: GraphRequestParams): Promise<T> {
     // 204 No Content
     if (res.status === 204) return undefined as T;
 
-    return (await res.json()) as T;
+    // Some Graph action endpoints (e.g. sendMail, setUserPreferredPresence,
+    // event accept/decline) return 200/202 with an EMPTY body — res.json()
+    // would throw "Unexpected end of JSON input". Read as text and only
+    // parse when there is actual content.
+    const bodyText = await res.text();
+    if (!bodyText) return undefined as T;
+    return JSON.parse(bodyText) as T;
   } finally {
     clearTimeout(timeout);
   }

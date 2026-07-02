@@ -12,7 +12,7 @@ describe("graphRequest", () => {
     globalThis.fetch = vi.fn().mockResolvedValue({
       ok: true,
       status: 200,
-      json: () => Promise.resolve({ value: [{ id: "1", subject: "Test" }] }),
+      text: () => Promise.resolve(JSON.stringify({ value: [{ id: "1", subject: "Test" }] })),
     });
 
     const result = await graphRequest<{ value: unknown[] }>({
@@ -54,11 +54,29 @@ describe("graphRequest", () => {
     expect(result).toBeUndefined();
   });
 
+  it("returns undefined for 200/202 with an empty body (Graph action endpoints)", async () => {
+    // e.g. sendMail, setUserPreferredPresence, event accept/decline reply
+    // with 200 or 202 and NO body — must not throw on JSON parsing.
+    globalThis.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      text: () => Promise.resolve(""),
+    });
+
+    const result = await graphRequest({
+      token: "test-token",
+      path: "/me/presence/setUserPreferredPresence",
+      method: "POST",
+      body: { availability: "Busy", activity: "Busy", expirationDuration: "PT5M" },
+    });
+    expect(result).toBeUndefined();
+  });
+
   it("passes raw body when Content-Type is not JSON", async () => {
     globalThis.fetch = vi.fn().mockResolvedValue({
       ok: true,
       status: 200,
-      json: () => Promise.resolve({ id: "file-1", name: "test.txt" }),
+      text: () => Promise.resolve(JSON.stringify({ id: "file-1", name: "test.txt" })),
     });
 
     await graphRequest({
@@ -78,7 +96,7 @@ describe("graphRequest", () => {
     globalThis.fetch = vi.fn().mockResolvedValue({
       ok: true,
       status: 200,
-      json: () => Promise.resolve({ id: "msg-1" }),
+      text: () => Promise.resolve(JSON.stringify({ id: "msg-1" })),
     });
 
     await graphRequest({
@@ -96,7 +114,7 @@ describe("graphRequest", () => {
     globalThis.fetch = vi.fn().mockResolvedValue({
       ok: true,
       status: 200,
-      json: () => Promise.resolve({}),
+      text: () => Promise.resolve("{}"),
     });
 
     await graphRequest({ token: "t", path: "/me/messages", version: "beta" });
