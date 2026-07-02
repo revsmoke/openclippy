@@ -2,7 +2,8 @@
 node_modules/
 dist/
 coverage/
-package-lock.json   # repo uses pnpm (pnpm-lock.yaml is the lockfile)
+# repo uses pnpm — pnpm-lock.yaml is the canonical lockfile
+package-lock.json
 
 # Secrets & local state
 .env
