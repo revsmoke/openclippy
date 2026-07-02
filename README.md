@@ -43,7 +43,7 @@ AI agents that manage your Microsoft 365 are powerful — but they need guardrai
 
 - **Focused scope.** 10 M365 services with 61 well-defined tools. Not an everything-agent — a purpose-built M365 agent.
 - **Granular permissions.** 4 tool profiles from `read-only` (can't change anything) to `admin` (org-wide ops). You decide what the agent can do.
-- **No stored secrets.** Device code auth via MSAL — your credentials stay with Microsoft, not in a config file.
+- **No stored Microsoft secrets.** Device code auth via MSAL — your Microsoft credentials stay with Microsoft, not in a config file. (The Anthropic API key for the agent lives in your config or environment.)
 - **Auditable codebase.** TypeScript (strict mode), clean module boundaries, MIT licensed. Read every line if you want.
 - **Extensible.** Plugin system for custom service integrations. Drop an ESM module in `~/.openclippy/plugins/` and go.
 
@@ -52,10 +52,15 @@ AI agents that manage your Microsoft 365 are powerful — but they need guardrai
 ## Quick Start
 
 ```bash
-# Install
+# Install and build
 pnpm install
+pnpm build
+npm link          # makes the `openclippy` command available globally
 
-# Configure Azure AD credentials
+# Run the setup wizard (Azure app, services, tool profile, API key)
+openclippy config --setup
+
+# Or configure by hand:
 mkdir -p ~/.openclippy
 cat > ~/.openclippy/config.yaml << 'EOF'
 azure:
@@ -63,7 +68,11 @@ azure:
   tenantId: "common"
 EOF
 
-# Authenticate
+# The agent (`ask` / `chat`) needs an Anthropic API key.
+# Set it in the wizard, in config (agent.apiKey), or via the environment:
+export ANTHROPIC_API_KEY="sk-ant-..."
+
+# Authenticate with Microsoft (device code flow)
 openclippy login
 
 # Ask a question
@@ -74,6 +83,8 @@ openclippy chat
 ```
 
 See [docs/setup.md](docs/setup.md) for the full Azure AD app registration walkthrough.
+
+> **Tip:** OpenClippy also loads a `.env` file from the current directory at startup, so you can keep `ANTHROPIC_API_KEY` there instead of exporting it. Shell-exported variables take precedence over `.env`.
 
 ---
 
@@ -104,10 +115,10 @@ This is the core of OpenClippy's security model. Tool profiles control which ope
 
 | Profile | Allowed Operations | Use Case |
 |---------|-------------------|----------|
-| **read-only** | List, read, search, free/busy | Safe browsing — no changes to your data |
-| **standard** | Read-only + create, update, draft, flag, move, reply, forward | Day-to-day work (default) |
-| **full** | Standard + send, delete, share, upload | Full autonomy including destructive operations |
-| **admin** | Full + organization-wide operations | IT admin scenarios |
+| **read-only** | List, read, search, free/busy — nothing that changes data | Safe browsing — no changes to your data |
+| **standard** | Everything except delete (create, update, send, reply, upload, share, ...) | Day-to-day work (default) |
+| **full** | All operations, including delete | Full autonomy including destructive operations |
+| **admin** | Same as full today; reserved for future org-wide operations | IT admin scenarios |
 
 Set your comfort level in config:
 
@@ -142,8 +153,9 @@ services:
   presence: { enabled: true }
 
 agent:
-  model: "claude-sonnet-4-5-20250514"
+  model: "claude-sonnet-5"
   toolProfile: "standard"
+  apiKey: "sk-ant-..."   # or set the ANTHROPIC_API_KEY environment variable
   identity:
     name: "Clippy"
 ```
@@ -159,7 +171,8 @@ agent:
 | `openclippy chat` | Interactive terminal chat session |
 | `openclippy status` | Check auth and service status |
 | `openclippy services` | List services and their scopes |
-| `openclippy config` | Show or edit configuration |
+| `openclippy config` | Show current configuration (API keys redacted) |
+| `openclippy config --setup` | Run the interactive setup wizard |
 | `openclippy gateway start` | Start the long-running gateway daemon |
 | `openclippy gateway stop` | Stop the gateway |
 | `openclippy gateway status` | Check gateway status |
@@ -183,23 +196,24 @@ See the [Plugin Authoring Guide](docs/plugin-authoring.md) for the full referenc
 ## Architecture
 
 ```
-CLI / TUI / Teams Bot
-        |
-   Gateway (WebSocket + HTTP)
-        |
+CLI (ask/chat/TUI)        Gateway daemon (optional)
+        |                   WebSocket + HTTP clients
+        +--------+----------+
+                 |
    Agent Runtime (Claude LLM + tool dispatch)
-        |
+                 |
    Service Modules (Mail, Calendar, ToDo, ...)
-        |
-   Graph API Client (typed fetch, pagination, batching)
-        |
+                 |
+   Graph API Client (typed fetch, pagination, rate-limit aware)
+                 |
    Microsoft Graph API
 ```
 
-- **Auth:** MSAL device code flow (public client, no secret required)
+- **Auth:** MSAL device code flow (public client, no client secret; tokens cached in `~/.openclippy/`)
 - **Graph client:** Custom fetch-based client — lean and typed, not the heavy `@microsoft/microsoft-graph-client`
-- **Gateway:** Long-running daemon with WebSocket (for CLI/TUI clients) and HTTP (for Graph change notifications and Teams bot webhooks)
-- **Subscriptions:** Mail and Calendar support Graph change notifications for real-time updates
+- **CLI:** `ask` and `chat` run the agent in-process — no daemon required
+- **Gateway:** Optional long-running daemon exposing the same agent over WebSocket (`/ws`) and HTTP (`POST /api/ask`, `GET /health`, `POST /webhooks/graph`)
+- **Subscriptions:** A Graph change-notification subscription manager (mail, calendar, todo) handles create/renew/delete lifecycle; routing incoming notifications to service modules is still being wired up
 - **Service modules:** Each M365 service implements a clean `ServiceModule` interface — capabilities, tools, optional health probes, optional subscriptions
 
 ---
@@ -245,6 +259,7 @@ Check out the issues labeled [`good first issue`](https://github.com/revsmoke/op
 - Node.js >= 22.12.0
 - A Microsoft 365 account (work/school or personal)
 - An Azure AD app registration ([setup guide](docs/setup.md))
+- An Anthropic API key for the agent (`ask` / `chat`) — [console.anthropic.com](https://console.anthropic.com)
 
 ## Development
 

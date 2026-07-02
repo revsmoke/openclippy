@@ -9,9 +9,9 @@ OpenClippy connects to 10 Microsoft 365 services via the Microsoft Graph API. Ea
 | [Mail](#mail) | `mail` | Outlook Mail | 11 | Mail.Read |
 | [Calendar](#calendar) | `calendar` | Outlook Calendar | 8 | Calendars.Read |
 | [To Do](#to-do) | `todo` | To Do | 6 | Tasks.Read |
-| [Teams Chat](#teams-chat) | `teams-chat` | Teams Chat | 6 | Chat.Read, ChatMessage.Send, Channel.ReadBasic.All, ChannelMessage.Read.All, ChannelMessage.Send |
+| [Teams Chat](#teams-chat) | `teams-chat` | Teams Chat | 6 | Chat.Read |
 | [OneDrive](#onedrive) | `onedrive` | OneDrive | 7 | Files.Read |
-| [People](#people--contacts) | `people` | People & Contacts | 3 | People.Read, Contacts.Read |
+| [People](#people--contacts) | `people` | People & Contacts | 3 | People.Read |
 | [Presence](#presence) | `presence` | Presence | 3 | Presence.Read |
 | [Planner](#planner) | `planner` | Planner | 6 | Tasks.Read |
 | [OneNote](#onenote) | `onenote` | OneNote | 5 | Notes.Read |
@@ -85,9 +85,12 @@ Supports Graph change notification subscriptions on `/me/events`.
 **Label:** Teams Chat
 **Description:** Read and send messages in Microsoft Teams chats and channels
 
-**Required Scopes:** `Chat.Read`, `ChatMessage.Send`, `Channel.ReadBasic.All`, `ChannelMessage.Read.All`, `ChannelMessage.Send`
+**Required Scopes:** `Chat.Read`
+**Optional Scopes:** `Chat.ReadWrite`, `ChatMessage.Send` (send chat messages), `Channel.ReadBasic.All`, `ChannelMessage.Read.All`, `ChannelMessage.Send` (channel tools)
 
-**Tools:** `teams_list_chats`, `teams_read_chat`, `teams_send`, `teams_list_channels`, `teams_channel_messages`, `teams_send_channel`
+**Tools:** `teams_chats_list`, `teams_chat_read`, `teams_chat_send`, `teams_channels_list`, `teams_channel_read`, `teams_channel_send`
+
+All scopes are requested at login when the service is enabled; only `Chat.Read` is needed for the service to count as available. Some organizations require admin consent for the `Channel.*` / `.All` scopes — without them the channel tools will fail at the Graph API.
 
 ---
 
@@ -110,9 +113,12 @@ Supports Graph change notification subscriptions on `/me/events`.
 **Label:** People & Contacts
 **Description:** Search for people relevant to the user and manage Outlook personal contacts
 
-**Required Scopes:** `People.Read`, `Contacts.Read`
+**Required Scopes:** `People.Read`
+**Optional Scopes:** `Contacts.Read`, `Contacts.ReadWrite`
 
 **Tools:** `people_search`, `contacts_list`, `contacts_read`
+
+The `contacts_list` and `contacts_read` tools need `Contacts.Read` (requested automatically at login when the service is enabled).
 
 ---
 
@@ -123,9 +129,11 @@ Supports Graph change notification subscriptions on `/me/events`.
 **Description:** Microsoft Teams presence -- read availability, set preferred presence, clear overrides
 
 **Required Scopes:** `Presence.Read`
-**Optional Scopes:** `Presence.ReadWrite`
+**Optional Scopes:** `Presence.Read.All`, `Presence.ReadWrite`
 
 **Tools:** `presence_read`, `presence_set`, `presence_clear`
+
+The `presence_set` and `presence_clear` tools need `Presence.ReadWrite` (requested automatically at login when the service is enabled).
 
 ---
 
@@ -186,4 +194,4 @@ services:
   presence: { enabled: true }
 ```
 
-When a service is enabled, OpenClippy will request the required scopes during login and expose that service's tools to the agent.
+When a service is enabled, OpenClippy requests both its required and optional scopes during `openclippy login` and exposes that service's tools to the agent (filtered by the configured tool profile). "Required" scopes are the minimum for the service to be considered available; "optional" scopes unlock additional tools within the service.

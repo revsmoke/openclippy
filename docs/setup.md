@@ -13,7 +13,7 @@ This guide walks you through registering an Azure AD application so OpenClippy c
 
 ## Step 1: Register the Application
 
-1. Go to **Azure Portal** > **Azure Active Directory** > **App registrations**
+1. Go to **Azure Portal** > **Microsoft Entra ID** (formerly Azure Active Directory) > **App registrations**
 2. Click **"New registration"**
 3. Fill in the form:
    - **Name:** `OpenClippy` (or your preferred name)
@@ -136,7 +136,13 @@ For personal Microsoft accounts, admin consent is not required.
 
 ## Next Steps
 
-Configure OpenClippy with your credentials:
+Configure OpenClippy with your credentials — either run the interactive wizard:
+
+```bash
+openclippy config --setup
+```
+
+or edit the config file by hand:
 
 ```yaml
 # ~/.openclippy/config.yaml
@@ -145,10 +151,12 @@ azure:
   tenantId: "common"   # or your specific tenant ID
 ```
 
+The agent commands (`ask` / `chat`) also need an Anthropic API key — set `agent.apiKey` in the config (the wizard prompts for it) or export `ANTHROPIC_API_KEY` in your environment.
+
 Then authenticate:
 
 ```bash
 openclippy login
 ```
 
-This opens a device code flow -- follow the on-screen instructions to sign in with your Microsoft account.
+This starts a device code flow -- follow the on-screen instructions to sign in with your Microsoft account. OpenClippy requests Graph scopes only for the services you have enabled.

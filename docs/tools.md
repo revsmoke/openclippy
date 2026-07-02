@@ -283,7 +283,7 @@ Delete a Microsoft To Do task.
 
 ## Teams Chat Tools
 
-### teams_list_chats
+### teams_chats_list
 
 List the current user's Teams chats (1:1, group, and meeting chats).
 
@@ -291,7 +291,7 @@ List the current user's Teams chats (1:1, group, and meeting chats).
 |-----------|------|----------|-------------|
 | `top` | number | No | Maximum number of chats to return (default 20, max 50) |
 
-### teams_read_chat
+### teams_chat_read
 
 Read recent messages from a Teams chat.
 
@@ -300,7 +300,7 @@ Read recent messages from a Teams chat.
 | `chatId` | string | Yes | The chat ID |
 | `top` | number | No | Number of messages to retrieve (default 20, max 50) |
 
-### teams_send
+### teams_chat_send
 
 Send a message to a Teams chat.
 
@@ -309,7 +309,7 @@ Send a message to a Teams chat.
 | `chatId` | string | Yes | The chat ID |
 | `content` | string | Yes | Message text to send |
 
-### teams_list_channels
+### teams_channels_list
 
 List channels in a Teams team.
 
@@ -317,7 +317,7 @@ List channels in a Teams team.
 |-----------|------|----------|-------------|
 | `teamId` | string | Yes | The team ID |
 
-### teams_channel_messages
+### teams_channel_read
 
 Read recent messages from a Teams channel.
 
@@ -327,7 +327,7 @@ Read recent messages from a Teams channel.
 | `channelId` | string | Yes | The channel ID |
 | `top` | number | No | Number of messages to retrieve (default 20, max 50) |
 
-### teams_send_channel
+### teams_channel_send
 
 Send a message to a Teams channel.
 

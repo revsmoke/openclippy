@@ -287,16 +287,16 @@ async execute(args) {
 
 ### Tool profile filtering
 
-Plugin tools are subject to the same tool profile rules as built-in tools. Tools with names containing these suffixes are filtered out in lower profiles:
+Plugin tools are subject to the same tool profile rules as built-in tools. Filtering matches on the tool name's **suffix** (the part after the last `_`):
 
-| Profile | Filtered suffixes |
-|---------|------------------|
-| **read-only** | `_send`, `_create`, `_update`, `_delete`, `_move`, `_reply`, `_forward`, `_flag`, `_upload`, `_share` |
-| **standard** | `_send`, `_delete`, `_share`, `_upload` |
-| **full** | None (all tools available) |
-| **admin** | None (all tools available) |
+| Profile | Rule |
+|---------|------|
+| **read-only** | Allowlist: only tools ending in `_list`, `_read`, `_search`, `_tasks`, `_folders`, `_freebusy`, or `_lists` pass. Everything else is filtered out (blocked suffixes like `_send`, `_create`, `_update`, `_delete` take precedence even if a tool also matched the allowlist). |
+| **standard** | All tools except those ending in `_delete` |
+| **full** | All tools |
+| **admin** | All tools |
 
-Name your tools accordingly. If a tool only reads data, avoid naming it with write-action suffixes.
+Name your tools accordingly — use the verb-last convention (`weather_forecast_read`, not `weather_read_forecast`). A read-only tool whose name doesn't end in one of the allowlisted suffixes will silently disappear under the `read-only` profile.
 
 ### Complete tool example
 
