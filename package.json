@@ -50,7 +50,7 @@
     "@anthropic-ai/sdk": "^0.39.0",
     "@azure/msal-node": "^2.16.0",
     "@sinclair/typebox": "^0.34.0",
-    "better-sqlite3": "^11.7.0",
+    "better-sqlite3": "^12.11.1",
     "commander": "^13.1.0",
     "ws": "^8.18.0",
     "yaml": "^2.7.0",
