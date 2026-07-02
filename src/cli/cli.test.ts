@@ -12,6 +12,9 @@ vi.mock("../config/paths.js", () => ({
   STATE_DIR: "/mock/.openclippy",
   CONFIG_PATH: "/mock/.openclippy/config.yaml",
   TOKEN_CACHE_PATH: "/mock/.openclippy/token-cache.json",
+  TRIAGE_DIR: "/mock/.openclippy/triage",
+  TRIAGE_RULES_PATH: "/mock/.openclippy/triage/rules.yaml",
+  TRIAGE_DB_PATH: "/mock/.openclippy/triage.db",
 }));
 
 vi.mock("../auth/credentials.js", () => ({

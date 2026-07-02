@@ -58,6 +58,56 @@ export function createProgram(): Command {
       await configCommand(opts);
     });
 
+  // Triage command with learning-loop subcommands
+  const triage = program
+    .command("triage")
+    .description("Triage inbox email against your saved rules");
+
+  triage
+    .command("run", { isDefault: true })
+    .description("Classify new mail, review proposals, act on approval")
+    .option("-n, --limit <n>", "Max messages to triage (default 25)")
+    .option("--folder <name>", "Source folder (default: inbox)")
+    .option("--all", "Include already-read messages")
+    .option("--dry-run", "Classify and show proposals without acting")
+    .action(async (opts: { limit?: string; folder?: string; all?: boolean; dryRun?: boolean }) => {
+      const { triageCommand } = await import("./triage.js");
+      await triageCommand(opts);
+    });
+
+  triage
+    .command("refine")
+    .description("Distill logged corrections into rule improvements")
+    .action(async () => {
+      const { triageRefineCommand } = await import("./triage.js");
+      await triageRefineCommand();
+    });
+
+  triage
+    .command("rules")
+    .description("List triage rules with accuracy stats")
+    .action(async () => {
+      const { triageRulesCommand } = await import("./triage.js");
+      await triageRulesCommand();
+    });
+
+  triage
+    .command("history")
+    .description("Show recent triage decisions")
+    .option("-n, --limit <n>", "Max decisions to show (default 20)")
+    .action(async (opts: { limit?: string }) => {
+      const { triageHistoryCommand } = await import("./triage.js");
+      await triageHistoryCommand(opts);
+    });
+
+  triage
+    .command("init")
+    .description("Bootstrap rules from your folders and a short interview")
+    .action(async () => {
+      const { triageInitCommand } = await import("./triage.js");
+      await triageInitCommand();
+    });
+
   // Gateway subcommand with start/stop/status
   const gateway = program
     .command("gateway")
